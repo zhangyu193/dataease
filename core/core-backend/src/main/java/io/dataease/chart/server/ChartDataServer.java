@@ -12,7 +12,7 @@ import io.dataease.constant.AuthConstant;
 import io.dataease.constant.CommonConstants;
 import io.dataease.dataset.manage.PermissionManage;
 import io.dataease.dataset.server.DatasetFieldServer;
-import io.dataease.engine.constant.DeTypeConstants;
+import io.dataease.constant.DeTypeConstants;
 import io.dataease.exception.DEException;
 import io.dataease.exportCenter.manage.ExportCenterManage;
 import io.dataease.exportCenter.util.ExportCenterUtils;
@@ -194,7 +194,11 @@ public class ChartDataServer implements ChartDataApi {
         }
         String suffix = formatter.getSuffix().trim();
         if (!suffix.isEmpty()) {
-            sb.append(suffix);
+            if (suffix.equals("%")) {
+                sb.append("\"%\"");
+            } else {
+                sb.append(suffix);
+            }
         }
         return sb.toString();
     }
@@ -265,7 +269,11 @@ public class ChartDataServer implements ChartDataApi {
                         ViewDetailField[] detailFields = request.getDetailFields();
                         Object[] header = request.getHeader();
                         Sheet detailsSheet = wb.createSheet("数据");
-                        setExcelData(detailsSheet, cellStyle, header, details, detailFields, excelTypes, request.getViewInfo(), null);
+                        if (request.getViewInfo().getType().equalsIgnoreCase("table-normal")) {
+                            setExcelData(detailsSheet, cellStyle, header, details, detailFields, excelTypes, request.getViewInfo(), wb);
+                        } else {
+                            setExcelData(detailsSheet, cellStyle, header, details, detailFields, excelTypes, request.getViewInfo(), null);
+                        }
                     } else {
                         for (int i = 0; i < request.getMultiInfo().size(); i++) {
                             ChartExcelRequestInner requestInner = request.getMultiInfo().get(i);
@@ -319,8 +327,7 @@ public class ChartDataServer implements ChartDataApi {
         if (viewInfo.getType().equalsIgnoreCase("table-normal") || viewInfo.getType().equalsIgnoreCase("table-info")) {
             for (ChartViewFieldDTO xAxi : xAxis) {
                 if (xAxi.getDeType().equals(DeTypeConstants.DE_INT) || xAxi.getDeType().equals(DeTypeConstants.DE_FLOAT)) {
-                    FormatterCfgDTO formatterCfgDTO = xAxi.getFormatterCfg() == null ? new FormatterCfgDTO() : xAxi.getFormatterCfg();
-                    CellStyle formatterCellStyle = createCellStyle(wb, formatterCfgDTO, null);
+                    CellStyle formatterCellStyle = createCellStyle(wb, xAxi.getFormatterCfg(), null);
                     styles.add(formatterCellStyle);
                 } else {
                     styles.add(null);
@@ -416,13 +423,7 @@ public class ChartDataServer implements ChartDataApi {
                                 if ((viewInfo.getType().equalsIgnoreCase("table-normal") || viewInfo.getType().equalsIgnoreCase("table-info")) && (xAxis.get(j).getDeType().equals(DeTypeConstants.DE_INT) || xAxis.get(j).getDeType().equals(DeTypeConstants.DE_FLOAT))) {
                                     try {
                                         FormatterCfgDTO formatterCfgDTO = xAxis.get(j).getFormatterCfg() == null ? new FormatterCfgDTO() : xAxis.get(j).getFormatterCfg();
-                                        if (formatterCfgDTO.getType().equalsIgnoreCase("auto")) {
-                                            row.getCell(j).setCellStyle(createCellStyle(wb, formatterCfgDTO, cellValue(formatterCfgDTO, new BigDecimal(cellValObj.toString()))));
-                                        }
-                                        if (styles.get(j) != null) {
-                                            row.getCell(j).setCellStyle(styles.get(j));
-                                        }
-
+                                        row.getCell(j).setCellStyle(styles.get(j));
                                         row.getCell(j).setCellValue(Double.valueOf(cellValue(formatterCfgDTO, new BigDecimal(cellValObj.toString()))));
                                     } catch (Exception e) {
                                         cell.setCellValue(cellValObj.toString());
@@ -469,6 +470,11 @@ public class ChartDataServer implements ChartDataApi {
     private static CellStyle createCellStyle(Workbook workbook, FormatterCfgDTO formatter, String value) {
         CellStyle cellStyle = workbook.createCellStyle();
         DataFormat format = workbook.createDataFormat();
+
+        if (formatter == null) {
+            cellStyle.setDataFormat(format.getFormat("General"));
+            return cellStyle;
+        }
         String formatStr = "";
         if (formatter.getType().equals("auto")) {
             String[] valueSplit = String.valueOf(value).split(".");
@@ -497,7 +503,11 @@ public class ChartDataServer implements ChartDataApi {
                 formatStr = "#,##" + formatStr;
             }
             if (StringUtils.isNotEmpty(formatter.getSuffix())) {
-                formatStr = formatStr + formatter.getSuffix();
+                if (formatter.getSuffix().equals("%")) {
+                    formatStr = formatStr + "\"%\"";
+                } else {
+                    formatStr = formatStr + formatter.getSuffix();
+                }
             }
         }
         if (formatter.getType().equals("value")) {
@@ -526,7 +536,11 @@ public class ChartDataServer implements ChartDataApi {
                 formatStr = "#,##" + formatStr;
             }
             if (StringUtils.isNotEmpty(formatter.getSuffix())) {
-                formatStr = formatStr + formatter.getSuffix();
+                if (formatter.getSuffix().equals("%")) {
+                    formatStr = formatStr + "\"%\"";
+                } else {
+                    formatStr = formatStr + formatter.getSuffix();
+                }
             }
         } else if (formatter.getType().equals("percent")) {
             if (formatter.getDecimalCount() > 0) {

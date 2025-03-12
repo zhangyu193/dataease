@@ -10,6 +10,8 @@ export default {
       dateRange: 'Date Range Picker',
       add_component_hint: 'Click or drag the component on the left to add a field'
     },
+    list_selection: 'List selection',
+    date_setting: 'Date setting',
     openMobileTerminal: 'Open mobile terminal',
     watermarkManagement: 'Watermark Management',
     inputText: 'Please enter',
@@ -97,7 +99,7 @@ export default {
   },
   operate_log: {
     name: 'Operation log',
-    search_by_operate_info: 'Search by operation details',
+    search_by_operate_info: 'Search by operation target',
     detail: 'Operation details',
     type: 'Operation type',
     status: 'Operation status',
@@ -427,7 +429,10 @@ export default {
       'The password has expired. Please contact the administrator to modify or reset it',
     pwd_exp_tips:
       'Password will expire in {0} days, please change your password as soon as possible',
-    qr_code: 'QR Code'
+    qr_code: 'QR Code',
+    platform_disable: '{0} setting disabled!',
+    input_account: 'Please enter account number',
+    redirect_2_auth: 'Redirecting to {0} authentication, {1} seconds...'
   },
   component: {
     columnList: 'List item',
@@ -938,7 +943,7 @@ export default {
     field_description: 'Field remark',
     dl: 'Data lake',
     other: 'Other',
-    local_file: 'Local file',
+    local_file: 'File',
     select_ds_type: 'Select Datasource type',
     select_ds: 'Select Datasource',
     ds_info: 'Enter Datasource information',
@@ -993,6 +998,9 @@ export default {
     oracle_sid: 'SID',
     oracle_service_name: 'Service name',
     get_schema: 'Get Schema',
+    get_tables: 'Get data tables',
+    get_views: 'Get views',
+    view: 'View',
     schema: 'Schema',
     charset: 'Character set',
     targetCharset: 'Target character set',
@@ -1069,6 +1077,7 @@ export default {
     has_repeat_field_name: 'Duplicate field name, please modify before selecting',
     primary_key_change: 'Primary key cannot be changed:',
     api_field_not_empty: 'Field cannot be empty',
+    file_not_empty: 'File cannot be empty',
     success_copy: 'Copy successfully',
     valid: 'Valid',
     invalid: 'Invalid',
@@ -1124,7 +1133,18 @@ export default {
     sync_table: 'Synchronize the specified table',
     req_completed: 'Request successful',
     sync_rate: 'Update frequency',
-    has_same_ds: 'There is a Datasource with the same configuration, confirm to save? '
+    has_same_ds: 'There is a Datasource with the same configuration, confirm to save? ',
+    app_token: 'app_token',
+    input_app_token: 'Please enter the app_token',
+    table_id: 'table_id',
+    input_table_id: 'Please select a data table',
+    view_id: 'view_id',
+    input_view_id: 'Please select a view',
+    remote_excel_url: 'Remote Excel/CSV Address',
+    remote_excel_url_placeholder:
+      'Please enter the remote Excel/CSV address, for example, ftp://192.168.1.101/files/data.xlsx',
+    remote_excel_url_empty: 'Please enter the remote Excel/CSV address',
+    load_data: 'Load Data'
   },
   chart: {
     align: 'Alignment',
@@ -1433,6 +1453,7 @@ export default {
     table_item_height: 'Table row height',
     text: 'Text',
     axis_show: 'Axis display',
+    axis_nameShow: 'Axis name display',
     axis_color: 'Axis color',
     axis_width: 'Axis width',
     axis_type: 'Axis type',
@@ -1799,12 +1820,12 @@ export default {
     axis_tip:
       'Minimum value, maximum value, and interval are all numeric types; if not filled in, this item will be considered automatic. <br/>Please make sure that the filled value can be calculated correctly, otherwise the axis value will not be displayed normally. ',
     format_tip: `The template variables are {a}, {b}, {c}, {d}, which represent the series name, data name, data value, etc. <br>
-When the trigger position is 'coordinate axis', there will be multiple series of data. At this time, the index of the series can be represented by {a0}, {a1}, {a2} followed by an index. <br>
-The meanings of {a}, {b}, {c}, {d} in different chart types are different. The variables {a}, {b}, {c}, {d} represent the data meanings in different chart types: <br><br>
-Line (area) chart, column (bar) chart, dashboard: {a} (series name), {b} (category value), {c} (value) <br>
-Pie chart, funnel chart: {a} (series name), {b} (data item name), {c} (value), {d} (percentage) <br>
-Map: {a} (series name), {b} (area name), {c} (combined value), {d} (none) <br>
-Scatter chart (bubble) chart: {a} (series name), {b} (data name), {c} (value array), {d} (none)`,
+      When the trigger position is 'coordinate axis', there will be multiple series of data. At this time, the index of the series can be represented by {a0}, {a1}, {a2} followed by an index. <br>
+      The meanings of {a}, {b}, {c}, {d} in different chart types are different. The variables {a}, {b}, {c}, {d} represent the data meanings in different chart types: <br><br>
+      Line (area) chart, column (bar) chart, dashboard: {a} (series name), {b} (category value), {c} (value) <br>
+      Pie chart, funnel chart: {a} (series name), {b} (data item name), {c} (value), {d} (percentage) <br>
+      Map: {a} (series name), {b} (area name), {c} (combined value), {d} (none) <br>
+      Scatter chart (bubble) chart: {a} (series name), {b} (data name), {c} (value array), {d} (none)`,
     h_position: 'Horizontal position',
     v_position: 'Vertical position',
     p_left: 'Left alignment',
@@ -1923,6 +1944,16 @@ Scatter chart (bubble) chart: {a} (series name), {b} (data name), {c} (value arr
     central_point: 'Center point',
     full_display: 'Full display',
     show_hover_style: 'Show mouse hover style',
+    table_header_group: 'Header grouping',
+    table_header_group_config: 'Header grouping config',
+    cancel_group: 'Cancel grouping',
+    cancel_all_group: 'Cancel all grouping',
+    group_name: 'Group name',
+    merge_group: 'Merge group',
+    table_header_group_config_tip:
+      'Field additions, deletions, positional changes, and explicit and implicit modifications can cause grouping to become invalid.',
+    group_name_edit_tip: 'Group names are 1-20 characters in length',
+    group_name_error_tip: 'Please input valid group name',
     merge_cells: 'Merge cells',
     length_limit: 'Length limit',
     radar_point: 'Enable auxiliary points',
@@ -1930,7 +1961,7 @@ Scatter chart (bubble) chart: {a} (series name), {b} (data name), {c} (value arr
     radar_area_color: 'Enable area',
     table_freeze_tip: 'After merging cells, column and row freezing is not supported',
     merge_cells_tips:
-      'After merging cells, freezing rows and columns and automatic line wrapping will become invalid',
+      'After merging cells, row and column freezing, automatic line wrapping, and zebra pattern will become invalid, the serial number of the current page will start from 1',
     merge_cells_break_line_tip: 'After merging cells, automatic line wrapping is not supported',
     font_family_ya_hei: 'Microsoft YaHei',
     font_family_song_ti: 'SimSun',
@@ -2005,9 +2036,19 @@ Scatter chart (bubble) chart: {a} (series name), {b} (data name), {c} (value arr
     circle_packing_padding: 'Circle padding',
     increase: 'Increase',
     decrease: 'Decrease',
-    total: 'Total'
+    accumulate: 'Accumulate',
+    table_cross_bg_tip: 'After merging cells, the zebra pattern is not supported',
+    pivot_export_invalid_field:
+      'The row dimension or indicator dimension is empty and can not be exported !',
+    pivot_export_invalid_col_exceed:
+      'Table can not be exported cause the number of columns exceeds the maximum limit!',
+    expand_all: 'Expand all',
+    level_label: 'Level {num}',
+    default_expand_level: 'Default expand level',
+    no_data_or_not_positive: 'No data available, or all data are not positive, unable to plot'
   },
   dataset: {
+    field_value: 'Field Value',
     scope_edit: 'Only effective when editing',
     scope_all: 'Globally effective when previewing datasets',
     spend_time: 'Time spent',
@@ -2295,7 +2336,13 @@ Scatter chart (bubble) chart: {a} (series name), {b} (data name), {c} (value arr
     batch_manage: 'Batch management',
     origin_name: 'Physical field name',
     origin_type: 'Physical field type',
-    field_diff: 'The selected field types are inconsistent and do not support conversion'
+    field_diff: 'The selected field types are inconsistent and do not support conversion',
+    create_grouping_field: 'Create a new grouping field',
+    editing_grouping_field: 'Editing Grouping Fields',
+    grouping_field: 'Grouping field',
+    grouping_settings: 'Grouping settings',
+    ungrouped_value: 'Ungrouped value',
+    please_enter_number: 'Please enter a number'
   },
   deDataset: {
     search_by_name: 'Search by name',
@@ -2808,6 +2855,14 @@ Scatter chart (bubble) chart: {a} (series name), {b} (data name), {c} (value arr
     column_name: 'Field name'
   },
   visualization: {
+    no_details: 'No Data',
+    sync_pc_design: 'Synchronize PC Design',
+    title_background: 'Title Background',
+    active_title_background: 'Active Title Background',
+    reuse_active_title_background: 'Reuse Active Title Background',
+    inactive_title_background: 'Inactive Title Background',
+    no_hidden_components: 'No Hidden Components',
+    hidden_components: 'Hidden Components',
     dashboard_adaptor: 'Zoom Mode',
     scale_keep_height_and_width: 'Canvas Ratio',
     scale_with_width: 'Component Ratio',
@@ -2936,7 +2991,7 @@ Scatter chart (bubble) chart: {a} (series name), {b} (data name), {c} (value arr
     dashboard_configuration: 'Dashboard Configuration',
     batch_style_set: 'Batch Style Setting',
     pic_import_tips: 'Supports JPG, PNG, GIF, SVG, size not exceeding {0}',
-    pic_size_error: 'Image size does not match',
+    pic_size_error: 'The image size cannot exceed 15MB',
     re_upload: 'Re-upload',
     screen_configuration: 'Screen Configuration',
     mobile_ios_tips: 'May not display on IOS',
@@ -3778,7 +3833,9 @@ Scatter chart (bubble) chart: {a} (series name), {b} (data name), {c} (value arr
     please_select: 'Please select ',
     query_timeout: 'Query timeout',
     description: 'Description',
-    tips: 'Tips'
+    tips: 'Tips',
+    replication: 'BACKEND Replicas',
+    replication_tip: 'Number of BE Nodes'
   },
   sync_summary: {
     summary: 'Overview',
@@ -3975,7 +4032,8 @@ Scatter chart (bubble) chart: {a} (series name), {b} (data name), {c} (value arr
     dynamic_partition_enable: 'Dynamic Partitioning',
     time_end: 'End',
     es_query_param_formatter_error:
-      'Query parameter format error, please enter the correct JSON format, please check'
+      'Query parameter format error, please enter the correct JSON format, please check',
+    show_task_id: 'View Task ID'
   },
   watermark: {
     support_params: 'Currently supported parameters:',
@@ -4120,12 +4178,26 @@ Scatter chart (bubble) chart: {a} (series name), {b} (data name), {c} (value arr
     confirm_delete_folder: 'Are you sure you want to delete this folder?',
     confirm_delete_form: 'Are you sure you want to delete this form?',
     confirm_delete_multiple_data: 'Are you sure you want to delete {0} pieces of data?',
-    confirm_delete_data: 'Are you sure you want to delete the data? ',
+    confirm_delete_data: 'Are you sure you want to delete the data?',
     no_form: 'No form yet',
     on_the_left: 'Please select a form on the left',
     exporting: 'Backend export in progress, can go to',
     progress_to_download: 'Check progress and download',
+    clear_selection: 'Clear selection',
+    truncate_table: 'Truncate table',
+    truncate: 'Truncate',
+    confirm_truncate_table: 'Confirm to truncate table?',
+    add_search_condition: 'Add search condition',
     form: {
+      set_enableDefaultTime: 'Default time',
+      currentTime: 'Current time',
+      defaultTime: 'Fixed time',
+      please_select_valid_column: 'Please select valid column',
+      create_type: 'Create type',
+      create_new_table: 'Create new table',
+      bind_exists_table: 'Bind exists table',
+      create_new_column: 'Create column',
+      select_exists_column: 'Bind column',
       add_detail_columns: 'Add column details',
       detail_columns: 'Column details',
       display_name: 'Display Name',
@@ -4372,6 +4444,7 @@ Scatter chart (bubble) chart: {a} (series name), {b} (data name), {c} (value arr
     wecom: 'WeCom',
     dingtalk: 'DingTalk',
     lark: 'Lark',
+    larksuite: 'Larksuite',
     notification_setting: 'Alarm notification',
     notification_method: 'Notification method',
     notification_user: 'Notifier',

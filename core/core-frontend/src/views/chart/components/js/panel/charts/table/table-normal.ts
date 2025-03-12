@@ -112,7 +112,7 @@ export class TableNormal extends S2ChartView<TableSheet> {
           if (value === null || value === undefined) {
             return value
           }
-          if (![2, 3].includes(f.deType) || !isNumber(value)) {
+          if (![2, 3, 4].includes(f.deType) || !isNumber(value)) {
             return value
           }
           let formatCfg = f.formatterCfg
@@ -286,6 +286,8 @@ export class TableNormal extends S2ChartView<TableSheet> {
     newChart.on(S2Event.LAYOUT_RESIZE_COL_WIDTH, ev => resizeAction(ev))
     // right click
     newChart.on(S2Event.GLOBAL_CONTEXT_MENU, event => copyContent(newChart, event, meta))
+    // touch
+    this.configTouchEvent(newChart, drawOption, meta)
     // theme
     const customTheme = this.configTheme(chart)
     newChart.setThemeCfg({ theme: customTheme })

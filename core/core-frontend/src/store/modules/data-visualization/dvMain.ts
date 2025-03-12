@@ -25,6 +25,7 @@ import { viewFieldTimeTrans } from '@/utils/viewUtils'
 import { useAppearanceStoreWithOut } from '@/store/modules/appearance'
 import { ElMessage } from 'element-plus-secondary'
 import { useI18n } from '@/hooks/web/useI18n'
+import { filterEnumParams } from '@/utils/componentUtils'
 const { t } = useI18n()
 
 export const dvMainStore = defineStore('dataVisualization', {
@@ -115,10 +116,10 @@ export const dvMainStore = defineStore('dataVisualization', {
       nowPanelJumpInfo: {},
       // 当前仪表板的跳转信息(只包括仪表板)
       nowPanelJumpInfoTargetPanel: {},
-      // 当前仪表板的外部参数信息
-      nowPanelOuterParamsInfo: {},
-      // 当前仪表板的外部参数基础信息
-      nowPanelOuterParamsBaseInfo: null,
+      // 当前仪表板的外部参数信息 兼容多仪表板嵌入式div
+      nowPanelOuterParamsInfoV2: {},
+      // 当前仪表板的外部参数基础信息 兼容多仪表板嵌入式div
+      nowPanelOuterParamsBaseInfoV2: {},
       // 拖拽的组件信息
       dragComponentInfo: null,
       // 移动端布局状态
@@ -157,6 +158,10 @@ export const dvMainStore = defineStore('dataVisualization', {
       batchOptComponentType: null,
       // panel edit batch operation status
       batchOptStatus: false,
+      // 隐藏组件打开状态
+      hiddenListStatus: false,
+      // 最后隐藏组件
+      lastHiddenComponent: [],
       // Currently selected components
       curBatchOptComponents: [],
       // Currently selected Multiplexing components
@@ -193,12 +198,23 @@ export const dvMainStore = defineStore('dataVisualization', {
       dataPrepareState: false, //数据准备状态
       multiplexingStyleAdapt: true, //复用样式跟随主题
       mainScrollTop: 0, //主画布运动量
-      isIframe: false // 当前是否在iframe中
+      isIframe: false, // 当前是否在iframe中
+      isPopWindow: false // 当前是否在iframe弹框中
     }
   },
   actions: {
+    setLastHiddenComponent(value?) {
+      if (value) {
+        this.lastHiddenComponent = [value]
+      } else if (this.lastHiddenComponent.length > 0) {
+        this.lastHiddenComponent = []
+      }
+    },
     setIframeFlag(value) {
       this.isIframe = value
+    },
+    setIsPopWindow(value) {
+      this.isPopWindow = value
     },
     setCanvasAttachInfo(value) {
       this.canvasAttachInfo = value
@@ -275,6 +291,7 @@ export const dvMainStore = defineStore('dataVisualization', {
     },
     setCurComponent({ component, index }) {
       this.setCurTabName(null)
+      this.setHiddenListStatus(false)
       if (!component && this.curComponent) {
         this.curComponent['editing'] = false
         this.curComponent['resizing'] = false
@@ -484,14 +501,12 @@ export const dvMainStore = defineStore('dataVisualization', {
               show: true,
               color,
               titleShow: false,
-              borderShow: false,
               text,
               textColorShow: false,
               labelColor,
               borderColor,
               title: '',
               borderWidth: 1,
-              bgColorShow: false,
               bgColor,
               titleColor,
               titleLayout,
@@ -904,6 +919,14 @@ export const dvMainStore = defineStore('dataVisualization', {
         customAttr: {}
       }
     },
+    setHiddenListStatus(status?) {
+      if (status != undefined) {
+        this.hiddenListStatus = !!status
+      } else {
+        this.hiddenListStatus = !this.hiddenListStatus
+      }
+      this.setBatchOptStatus(false)
+    },
     removeCurBatchComponentWithId(id) {
       for (let index = 0; index < this.curBatchOptComponents.length; index++) {
         const element = this.curBatchOptComponents[index]
@@ -965,9 +988,9 @@ export const dvMainStore = defineStore('dataVisualization', {
     setNowTargetPanelJumpInfo(jumpInfo) {
       this.nowPanelJumpInfoTargetPanel = jumpInfo.baseJumpInfoVisualizationMap
     },
-    setNowPanelOuterParamsInfo(outerParamsInfo) {
-      this.nowPanelOuterParamsInfo = outerParamsInfo.outerParamsInfoMap
-      this.nowPanelOuterParamsBaseInfo = outerParamsInfo.outerParamsInfoBaseMap
+    setNowPanelOuterParamsInfoV2(outerParamsInfo, dvId = this.dvInfo.id) {
+      this.nowPanelOuterParamsInfoV2[dvId] = outerParamsInfo.outerParamsInfoMap
+      this.nowPanelOuterParamsBaseInfoV2[dvId] = outerParamsInfo.outerParamsInfoBaseMap
     },
     // 添加联动 下钻 等查询组件
     addViewTrackFilter(data) {
@@ -1043,15 +1066,20 @@ export const dvMainStore = defineStore('dataVisualization', {
       }
     },
     // 添加外部参数的过滤条件
-    addOuterParamsFilter(paramsPre, curComponentData = this.componentData, source = 'inner') {
+    addOuterParamsFilter(
+      paramsPre,
+      curComponentData = this.componentData,
+      source = 'inner',
+      dvId = this.dvInfo.id
+    ) {
       // params 结构 {key1:value1,key2:value2}
       const params = {}
       const paramsVersion = (paramsPre && paramsPre['outerParamsVersion']) || 'v1'
-      if (this.nowPanelOuterParamsBaseInfo) {
+      if (this.nowPanelOuterParamsBaseInfoV2[dvId]) {
         let errorCount = 0
         let errorMes = ''
-        Object.keys(this.nowPanelOuterParamsBaseInfo).forEach(key => {
-          const targetInfo = this.nowPanelOuterParamsBaseInfo[key]
+        Object.keys(this.nowPanelOuterParamsBaseInfoV2[dvId]).forEach(key => {
+          const targetInfo = this.nowPanelOuterParamsBaseInfoV2[dvId][key]
           const userParams = paramsPre ? paramsPre[key] : null
           const userParamsIsNull = !userParams || userParams.length === 0
           if (targetInfo.required && userParamsIsNull) {
@@ -1080,7 +1108,7 @@ export const dvMainStore = defineStore('dataVisualization', {
 
       if (params) {
         const preActiveComponentIds = []
-        const trackInfo = this.nowPanelOuterParamsInfo
+        const trackInfo = this.nowPanelOuterParamsInfoV2[dvId]
         for (let index = 0; index < curComponentData.length; index++) {
           const element = curComponentData[index]
           if (['UserView', 'VQuery'].includes(element.component)) {
@@ -1347,6 +1375,12 @@ export const dvMainStore = defineStore('dataVisualization', {
                 filterItem.defaultValueCheck = true
                 filterItem.timeType = 'fixed'
                 if (['0', '2'].includes(filterItem.displayType)) {
+                  const { optionValueSource, field, displayId } = filterItem
+                  const queryMapFlag = optionValueSource === 1 && field.id !== displayId
+                  let queryMapParams = queryParams
+                  if (queryMapFlag) {
+                    queryMapParams = filterEnumParams(queryParams, field.id)
+                  }
                   // 0 文本类型 1 数字类型
                   if (filterItem.multiple) {
                     // multiple === true 多选
@@ -1357,8 +1391,8 @@ export const dvMainStore = defineStore('dataVisualization', {
                     filterItem['selectValue'] = queryParams[0]
                     filterItem['defaultValue'] = queryParams[0]
                   }
-                  filterItem['defaultMapValue'] = queryParams
-                  filterItem['mapValue'] = queryParams
+                  filterItem['defaultMapValue'] = queryMapParams
+                  filterItem['mapValue'] = queryMapParams
                 } else if (filterItem.displayType === '1') {
                   // 1 时间类型
                   filterItem['selectValue'] = queryParams[0]
@@ -1515,6 +1549,7 @@ export const dvMainStore = defineStore('dataVisualization', {
       const optName =
         dvType === 'dashboard' ? t('visualization.new_dashboard') : t('visualization.new_screen')
       const name = preName ? preName : optName
+      this.hiddenListStatus = false
       this.dvInfo = {
         dataState: 'prepare',
         optType: null,

@@ -155,61 +155,77 @@ onMounted(() => {
         </div>
       </el-radio-group>
     </el-form-item>
-    <el-form-item
-      class="form-item"
-      :class="'form-item-' + themes"
-      :label="t('chart.name')"
-      v-if="showProperty('name')"
-    >
-      <el-input
-        :effect="props.themes"
-        v-model="state.axisForm.name"
-        size="small"
-        maxlength="50"
-        @blur="changeAxisStyle('name')"
-      />
-    </el-form-item>
 
-    <div style="display: flex">
+    <el-form-item class="form-item" :class="'form-item-' + themes" v-if="!isBidirectionalBar">
+      <el-checkbox
+        size="small"
+        :effect="props.themes"
+        v-model="state.axisForm.nameShow"
+        @change="changeAxisStyle('nameShow')"
+      >
+        {{ t('chart.axis_nameShow') }}
+      </el-checkbox>
+    </el-form-item>
+    <div style="margin-left: 22px">
       <el-form-item
         class="form-item"
         :class="'form-item-' + themes"
-        v-if="showProperty('color')"
-        :label="t('chart.chart_style')"
+        :label="t('chart.name')"
+        v-if="showProperty('name')"
       >
-        <el-color-picker
-          v-model="state.axisForm.color"
-          class="color-picker-style"
-          :predefine="predefineColors"
-          @change="changeAxisStyle('color')"
-          :effect="themes"
-          is-custom
+        <el-input
+          :disabled="!state.axisForm.nameShow"
+          :effect="props.themes"
+          v-model="state.axisForm.name"
+          size="small"
+          maxlength="50"
+          @blur="changeAxisStyle('name')"
         />
       </el-form-item>
-      <el-form-item
-        class="form-item"
-        :class="'form-item-' + themes"
-        v-if="showProperty('fontSize')"
-        style="padding-left: 4px"
-      >
-        <template #label>&nbsp;</template>
-        <el-tooltip :content="t('chart.font_size')" :effect="toolTip" placement="top">
-          <el-select
-            style="width: 108px"
-            :effect="props.themes"
-            v-model="state.axisForm.fontSize"
-            :placeholder="t('chart.axis_name_fontsize')"
-            @change="changeAxisStyle('fontSize')"
-          >
-            <el-option
-              v-for="option in fontSizeList"
-              :key="option.value"
-              :label="option.name"
-              :value="option.value"
-            />
-          </el-select>
-        </el-tooltip>
-      </el-form-item>
+
+      <div style="display: flex">
+        <el-form-item
+          class="form-item"
+          :class="'form-item-' + themes"
+          v-if="showProperty('color')"
+          :label="t('chart.chart_style')"
+        >
+          <el-color-picker
+            :disabled="!state.axisForm.nameShow"
+            v-model="state.axisForm.color"
+            class="color-picker-style"
+            :predefine="predefineColors"
+            @change="changeAxisStyle('color')"
+            :effect="themes"
+            is-custom
+          />
+        </el-form-item>
+        <el-form-item
+          class="form-item"
+          :class="'form-item-' + themes"
+          v-if="showProperty('fontSize')"
+          style="padding-left: 4px"
+        >
+          <template #label>&nbsp;</template>
+          <el-tooltip :content="t('chart.font_size')" :effect="toolTip" placement="top">
+            <el-select
+              :disabled="!state.axisForm.nameShow"
+              style="width: 108px"
+              :effect="props.themes"
+              v-model="state.axisForm.fontSize"
+              :placeholder="t('chart.axis_name_fontsize')"
+              @change="changeAxisStyle('fontSize')"
+            >
+              <el-option
+                v-for="option in fontSizeList"
+                :key="option.value"
+                :label="option.name"
+                :value="option.value"
+              />
+            </el-select>
+          </el-tooltip>
+        </el-form-item>
+      </div>
     </div>
 
     <template v-if="showProperty('axisValue')">
@@ -305,6 +321,49 @@ onMounted(() => {
         {{ t('chart.axis_show') }}
       </el-checkbox>
     </el-form-item>
+    <div style="padding-left: 22px" v-if="showProperty('axisLine')">
+      <div style="flex: 1; display: flex">
+        <el-form-item class="form-item" :class="'form-item-' + themes" style="padding-right: 4px">
+          <el-color-picker
+            :disabled="!state.axisForm.axisLine.show"
+            v-model="state.axisForm.axisLine.lineStyle.color"
+            :predefine="predefineColors"
+            :effect="themes"
+            @change="changeAxisStyle('axisLine.lineStyle.color')"
+            is-custom
+          />
+        </el-form-item>
+        <el-form-item class="form-item" :class="'form-item-' + themes" style="padding: 0 4px">
+          <el-select
+            :disabled="!state.axisForm.axisLine.show"
+            style="width: 62px"
+            :effect="props.themes"
+            v-model="state.axisForm.axisLine.lineStyle.style"
+            @change="changeAxisStyle('axisLine.lineStyle.style')"
+          >
+            <el-option
+              v-for="option in splitLineStyle"
+              :key="option.value"
+              :value="option.value"
+              :label="option.label"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item class="form-item" :class="'form-item-' + themes" style="padding-left: 4px">
+          <el-input-number
+            :disabled="!state.axisForm.axisLine.show"
+            style="width: 70px"
+            :effect="props.themes"
+            v-model="state.axisForm.axisLine.lineStyle.width"
+            :min="1"
+            :max="10"
+            size="small"
+            controls-position="right"
+            @change="changeAxisStyle('axisLine.lineStyle.width')"
+          />
+        </el-form-item>
+      </div>
+    </div>
     <el-form-item
       class="form-item form-item-checkbox"
       :class="{

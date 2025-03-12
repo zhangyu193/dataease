@@ -21,12 +21,14 @@ import DeFullscreen from '@/components/visualization/common/DeFullscreen.vue'
 import EmptyBackground from '../../empty-background/src/EmptyBackground.vue'
 import LinkOptBar from '@/components/data-visualization/canvas/LinkOptBar.vue'
 import { isDesktop } from '@/utils/ModelUtil'
+import { isMobile } from '@/utils/utils'
 const dvMainStore = dvMainStoreWithOut()
 const { pcMatrixCount, curComponent, mobileInPc, canvasState, inMobile } = storeToRefs(dvMainStore)
 const openHandler = ref(null)
 const customDatasetParamsRef = ref(null)
 const emits = defineEmits(['onResetLayout'])
 const fullScreeRef = ref(null)
+const isOverSize = ref(false)
 const isDesktopFlag = isDesktop()
 const props = defineProps({
   canvasStyleData: {
@@ -143,11 +145,21 @@ const isReport = computed(() => {
 })
 
 const popComponentData = computed(() =>
-  componentData.value.filter(ele => ele.category && ele.category === 'hidden')
+  componentData.value.filter(
+    ele =>
+      ele.category &&
+      ele.category === 'hidden' &&
+      (!ele?.dashboardHidden || (ele?.dashboardHidden && isMobile()))
+  )
 )
 
 const baseComponentData = computed(() =>
-  componentData.value.filter(ele => ele?.category !== 'hidden' && ele.component !== 'GroupArea')
+  componentData.value.filter(
+    ele =>
+      ele?.category !== 'hidden' &&
+      ele.component !== 'GroupArea' &&
+      (!ele?.dashboardHidden || (ele?.dashboardHidden && isMobile()))
+  )
 )
 const canvasStyle = computed(() => {
   let style = {}
@@ -159,6 +171,7 @@ const canvasStyle = computed(() => {
     if (canvasStyleData.value?.screenAdaptor === 'keep') {
       style['height'] = canvasStyleData.value?.height + 'px'
       style['width'] = canvasStyleData.value?.width + 'px'
+      style['margin'] = 'auto'
     } else {
       style['height'] = dashboardActive.value
         ? downloadStatus.value
@@ -275,6 +288,10 @@ const resetLayout = () => {
       }
       renderReady.value = true
       emits('onResetLayout')
+      isOverSize.value = false
+      if (previewCanvas.value?.clientHeight - previewCanvas.value?.parentNode?.clientHeight > 0) {
+        isOverSize.value = true
+      }
     }
   })
 }
@@ -327,7 +344,7 @@ const refreshDataV = () => {
 }
 
 const initWatermark = (waterDomId = 'preview-canvas-main') => {
-  if (dvInfo.value.watermarkInfo && isMainCanvas(canvasId.value)) {
+  if (dvInfo.value.watermarkInfo && isMainCanvas(canvasId.value) && !downloadStatus.value) {
     activeWatermarkCheckUser(waterDomId, canvasId.value, scaleMin.value / 100)
   }
 }
@@ -386,9 +403,11 @@ const userViewEnlargeOpen = (opt, item) => {
   )
 }
 const handleMouseDown = () => {
-  dvMainStore.setCurComponent({ component: null, index: null })
-  if (!curComponent.value || (curComponent.value && curComponent.value.category !== 'hidden')) {
-    dvMainStore.canvasStateChange({ key: 'curPointArea', value: 'base' })
+  if (showPosition.value !== 'viewDialog') {
+    dvMainStore.setCurComponent({ component: null, index: null })
+    if (!curComponent.value || (curComponent.value && curComponent.value.category !== 'hidden')) {
+      dvMainStore.canvasStateChange({ key: 'curPointArea', value: 'base' })
+    }
   }
 }
 
@@ -451,6 +470,7 @@ const linkOptBarShow = computed(() => {
 const downloadAsPDF = () => {
   // test
 }
+
 defineExpose({
   restore
 })
@@ -467,7 +487,7 @@ defineExpose({
     v-if="state.initState"
   >
     <!--弹框触发区域-->
-    <canvas-filter-btn v-if="filterBtnShow"></canvas-filter-btn>
+    <canvas-filter-btn :is-fixed="isOverSize" v-if="filterBtnShow"></canvas-filter-btn>
     <!-- 弹框区域 -->
     <PopArea
       v-if="popAreaAvailable"

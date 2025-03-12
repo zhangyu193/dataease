@@ -60,6 +60,12 @@ export const listDatasourceTables = async (data = {}): Promise<IResponse> => {
   })
 }
 
+export const getTableStatus = async (data = {}): Promise<IResponse> => {
+  return request.post({ url: '/datasource/getTableStatus', data }).then(res => {
+    return res
+  })
+}
+
 export const getSchema = (data = {}) => {
   return request.post({ url: '/datasource/getSchema', data })
 }
@@ -173,6 +179,10 @@ export const uploadFile = async (data): Promise<IResponse> => {
     .then(res => {
       return res
     })
+}
+
+export const loadRemoteFile = async (data = {}) => {
+  return request.post({ url: '/datasource/loadRemoteFile', data })
 }
 
 export const listSyncRecord = (page: number, limit: number, dsId: number | string) =>

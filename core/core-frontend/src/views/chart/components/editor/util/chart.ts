@@ -448,7 +448,12 @@ export const DEFAULT_TABLE_HEADER: ChartTableHeaderAttr = {
   isColItalic: false,
   isBolder: true,
   isCornerBolder: true,
-  isColBolder: true
+  isColBolder: true,
+  headerGroup: false,
+  headerGroupConfig: {
+    columns: [],
+    meta: []
+  }
 }
 export const DEFAULT_TABLE_CELL: ChartTableCellAttr = {
   tableFontColor: '#000000',
@@ -592,6 +597,7 @@ export const DEFAULT_MARGIN_STYLE = {
 export const DEFAULT_XAXIS_STYLE: ChartAxisStyle = {
   show: true,
   position: 'bottom',
+  nameShow: false,
   name: '',
   color: '#333333',
   fontSize: 12,
@@ -637,6 +643,7 @@ export const DEFAULT_XAXIS_STYLE: ChartAxisStyle = {
 export const DEFAULT_YAXIS_STYLE: ChartAxisStyle = {
   show: true,
   position: 'left',
+  nameShow: false,
   name: '',
   color: '#333333',
   fontSize: 12,
@@ -1644,6 +1651,7 @@ export const DEFAULT_BASIC_STYLE: ChartBasicStyle = {
   zoomButtonColor: '#aaa',
   zoomBackground: '#fff',
   tableLayoutMode: 'grid',
+  defaultExpandLevel: 1,
   calcTopN: false,
   topN: 5,
   topNLabel: t('datasource.other'),
@@ -1669,7 +1677,10 @@ export const DEFAULT_BASIC_STYLE: ChartBasicStyle = {
   maxLines: 3,
   radarShowPoint: true,
   radarPointSize: 4,
-  radarAreaColor: true
+  radarAreaColor: true,
+  circleBorderColor: '#fff',
+  circleBorderWidth: 0,
+  circlePadding: 0
 }
 
 export const BASE_VIEW_CONFIG = {

@@ -80,6 +80,10 @@ export const snapshotStore = defineStore('snapshot', {
       }
       this.recordSnapshotCache(type)
     },
+    recordSnapshotCacheWithPositionChange(type?, viewId = 'all') {
+      dvMainStore.setLastHiddenComponent()
+      this.recordSnapshotCache(type, viewId)
+    },
     recordSnapshotCache(type?, viewId = 'all') {
       if (dataPrepareState.value) {
         if (type === 'calcData') {
@@ -115,6 +119,7 @@ export const snapshotStore = defineStore('snapshot', {
         snapshotInfo.dvInfo.dataState = dvInfo.value.dataState
         snapshotInfo.dvInfo.contentId = dvInfo.value.contentId
         this.snapshotPublish(snapshotInfo)
+        this.styleChangeTimes++
         this.snapshotDisableTime = Date.now() + 3000
       }
     },

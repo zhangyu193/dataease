@@ -213,6 +213,13 @@ export const COMMON_COMPONENT_BACKGROUND_MAP = {
   dark: COMMON_COMPONENT_BACKGROUND_DARK
 }
 
+export const COMMON_TAB_TITLE_BACKGROUND = {
+  enable: false, // 是否启用tab标题背景
+  multiply: true, // 激活状态与非激活状态背景是否复用
+  active: COMMON_COMPONENT_BACKGROUND_LIGHT,
+  inActive: COMMON_COMPONENT_BACKGROUND_LIGHT
+}
+
 export const commonAttr = {
   animations: [],
   canvasId: 'canvas-main',
@@ -224,6 +231,7 @@ export const commonAttr = {
   maintainRadio: false, // 布局时保持宽高比例
   aspectRatio: 1, // 锁定时的宽高比例
   isShow: true, // 是否显示组件
+  dashboardHidden: false, // 仪表板组件隐藏
   category: 'base', //组件类型 base 基础组件 hidden隐藏组件
   // 当前组件动作
   dragging: false,
@@ -616,6 +624,7 @@ export function findNewComponentFromList(
       newComponent.innerType = innerType
       if (comp.component === 'DeTabs') {
         newComponent.propValue[0].name = guid()
+        newComponent['titleBackground'] = deepCopy(COMMON_TAB_TITLE_BACKGROUND)
       }
     }
   })
@@ -639,7 +648,14 @@ export function findBaseDeFaultAttr(componentName) {
     if (comp.component === componentName) {
       const stylePropertyInner = []
       Object.keys(comp.style).forEach(styleKey => {
-        stylePropertyInner.push(styleKey)
+        if (
+          (!['width', 'height'].includes(styleKey) &&
+            componentName === 'VQuery' &&
+            !Object.keys(commonStyle).includes(styleKey)) ||
+          componentName !== 'VQuery'
+        ) {
+          stylePropertyInner.push(styleKey)
+        }
       })
       result = {
         properties: ['common-style', 'background-overall-component'],

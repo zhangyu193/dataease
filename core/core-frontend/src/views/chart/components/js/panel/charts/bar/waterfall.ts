@@ -72,7 +72,8 @@ export class Waterfall extends G2PlotChartView<WaterfallOptions, G2Waterfall> {
       'axisForm',
       'axisLabel',
       'axisLabelFormatter',
-      'showLengthLimit'
+      'showLengthLimit',
+      'axisLine'
     ],
     threshold: ['lineThreshold']
   }
@@ -158,7 +159,7 @@ export class Waterfall extends G2PlotChartView<WaterfallOptions, G2Waterfall> {
     return {
       ...options,
       total: {
-        label: t('chart.total'),
+        label: t('chart.waterfall_total'),
         style: {
           fill: setGradientColor(hexColorToRGBA(totalColorRgba, alpha), gradient, 270)
         }
@@ -303,7 +304,7 @@ export class Waterfall extends G2PlotChartView<WaterfallOptions, G2Waterfall> {
             }
           },
           {
-            name: t('chart.total'),
+            name: t('chart.waterfall_total'),
             value: '',
             marker: {
               style: {

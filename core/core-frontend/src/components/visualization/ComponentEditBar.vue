@@ -163,6 +163,12 @@
               </el-dropdown>
             </el-dropdown-item>
           </template>
+          <el-dropdown-item
+            @click="hiddenComponent"
+            v-if="barShowCheck('hidden') && isMainCanvas(canvasId)"
+            >{{ t('visualization.hidden') }}</el-dropdown-item
+          >
+
           <xpack-component
             :chart="element"
             jsname="L2NvbXBvbmVudC90aHJlc2hvbGQtd2FybmluZy9FZGl0QmFySGFuZGxlcg=="
@@ -244,6 +250,9 @@ import CustomTabsSort from '@/custom-component/de-tabs/CustomTabsSort.vue'
 import { exportPivotExcel } from '@/views/chart/components/js/panel/common/common_table'
 import { XpackComponent } from '@/components/plugin'
 import { exportPermission, isMobile } from '@/utils/utils'
+import { layerStoreWithOut } from '@/store/modules/data-visualization/layer'
+import { isMainCanvas } from '@/utils/canvasUtils'
+const layerStore = layerStoreWithOut()
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
 const copyStore = copyStoreWithOut()
@@ -267,6 +276,7 @@ const positionBarShow = {
   canvas: [
     'datasetParams',
     'enlarge',
+    'hidden',
     'details',
     'setting',
     'copy',
@@ -287,6 +297,7 @@ const componentTypeBarShow = {
   UserView: [
     'datasetParams',
     'enlarge',
+    'hidden',
     'details',
     'setting',
     'copy',
@@ -300,7 +311,7 @@ const componentTypeBarShow = {
     'linkageSetting',
     'linkJumpSetting'
   ],
-  default: ['setting', 'delete', 'copy', 'multiplexing', 'batchOpt']
+  default: ['setting', 'delete', 'copy', 'multiplexing', 'batchOpt', 'hidden']
 }
 
 const barShowCheck = barName => {
@@ -352,7 +363,8 @@ const {
   canvasViewInfo,
   mobileInPc,
   dvInfo,
-  isIframe
+  isPopWindow,
+  hiddenListStatus
 } = storeToRefs(dvMainStore)
 
 const state = reactive({
@@ -373,6 +385,7 @@ const state = reactive({
   viewXArray: [],
   batchOptCheckModel: false
 })
+const showHiddenIcon = computed(() => hiddenListStatus.value && isMainCanvas(canvasId.value))
 
 const tabSort = () => {
   customTabsSortRef.value.sortInit(element.value)
@@ -395,7 +408,11 @@ const showEditPosition = computed(() => {
     const baseLeft = element.value.x - 1
     const baseRight = pcMatrixCount.value.x - (element.value.x + element.value.sizeX - 1)
     if ((baseLeft === 0 && baseRight === 0) || baseRight < 0) {
-      return 'bar-main-right-inner'
+      if (showHiddenIcon.value) {
+        return 'bar-main-left-inner'
+      } else {
+        return 'bar-main-right-inner'
+      }
     } else if (baseRight === 0) {
       return 'bar-main-left-outer'
     } else {
@@ -490,6 +507,16 @@ const userViewEnlargeOpen = (e, opt) => {
   e.preventDefault()
   e.stopPropagation()
   emits('userViewEnlargeOpen', opt)
+}
+
+const hiddenComponent = () => {
+  if (curComponent.value) {
+    curComponent.value.dashboardHidden = true
+    eventBus.emit('removeMatrixItemPosition-' + canvasId.value, curComponent.value)
+    dvMainStore.setHiddenListStatus(true)
+    snapshotStore.recordSnapshotCache('hide')
+    dvMainStore.setLastHiddenComponent(curComponent.value.id)
+  }
 }
 
 // 复用-Begin
@@ -607,7 +634,7 @@ const initCurFields = () => {
 }
 
 const showDownload = computed(
-  () => canvasViewInfo.value[element.value.id]?.dataFrom !== 'template' && !isIframe.value
+  () => canvasViewInfo.value[element.value.id]?.dataFrom !== 'template' && !isPopWindow.value
 )
 // 富文本-End
 
@@ -671,6 +698,11 @@ watch(
 .bar-main-right-inner {
   width: 24px;
   right: 0px;
+}
+
+.bar-main-left-inner {
+  width: 24px;
+  left: 0px;
 }
 
 .bar-main-left-outer {

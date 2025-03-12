@@ -105,6 +105,10 @@ declare interface ChartBasicStyle {
    */
   tableLayoutMode: 'grid' | 'tree'
   /**
+   * 表格默认展开层级
+   */
+  defaultExpandLevel: number | 'all'
+  /**
    * 仪表盘样式
    */
   gaugeStyle: string
@@ -441,6 +445,32 @@ declare interface ChartTableHeaderAttr {
   isBolder: boolean
   isCornerBolder: boolean
   isColBolder: boolean
+  /**
+   * 表头分组开关
+   */
+  headerGroup: boolean
+  /**
+   * 表头分组设置
+   */
+  headerGroupConfig: {
+    /**
+     * 分组结构
+     */
+    columns: Columns
+    /**
+     * 分组名称
+     */
+    meta: {
+      /**
+       * 字段id
+       */
+      field: string
+      /**
+       * 名称
+       */
+      name: string
+    }[]
+  }
 }
 /**
  * 单元格属性
@@ -1276,3 +1306,10 @@ declare interface ConversionTagAtt {
    */
   precision: number
 }
+
+declare interface ColumnNode {
+  key: string
+  children?: Columns
+}
+
+declare type Columns = Array<string | ColumnNode>

@@ -10,6 +10,8 @@ export default {
       dateRange: '時間範圍',
       add_component_hint: '點選或拖曳左側元件新增欄位'
     },
+    list_selection: '清單選擇',
+    date_setting: '日期設定',
     openMobileTerminal: '開啟行動端',
     watermarkManagement: '水印管理',
     inputText: '請輸入',
@@ -97,7 +99,7 @@ export default {
   },
   operate_log: {
     name: '操作日誌',
-    search_by_operate_info: '透過操作詳情搜尋',
+    search_by_operate_info: '透過操作對象搜尋',
     detail: '操作詳情',
     type: '操作類型',
     status: '操作狀態',
@@ -416,7 +418,10 @@ export default {
     other_login: '其他登錄方式',
     pwd_invalid_error: '密碼已過期請聯系管理員修改或重置',
     pwd_exp_tips: '密碼在 {0} 天後過期，請盡快修改密碼',
-    qr_code: '二維碼'
+    qr_code: '二維碼',
+    platform_disable: '{0}設置未開啟！',
+    input_account: '請輸入賬號',
+    redirect_2_auth: '正在跳轉至 {0} 認證，{1} 秒...'
   },
   component: {
     columnList: '列表項目',
@@ -908,7 +913,7 @@ export default {
     field_description: '字段備註',
     dl: '資料湖',
     other: '其他',
-    local_file: '本地檔案',
+    local_file: '檔案',
     select_ds_type: '選擇資料來源類型',
     select_ds: '選擇資料來源',
     ds_info: '錄入資料來源資訊',
@@ -1036,6 +1041,7 @@ export default {
     has_repeat_field_name: '欄位名稱重複，請修改後再選擇',
     primary_key_change: '主鍵不能改變:',
     api_field_not_empty: '欄位不能為空',
+    file_not_empty: '文件不能為空',
     success_copy: '複製成功',
     primary_key_length: '主鍵必須設置長度: ',
     valid: '有效',
@@ -1093,7 +1099,18 @@ export default {
     sync_table: '同步指定表',
     req_completed: '請求成功',
     sync_rate: '更新頻率',
-    has_same_ds: '存在相同配置資料來源，確認保存？ '
+    has_same_ds: '存在相同配置資料來源，確認保存？ ',
+    app_token: 'app_token',
+    input_app_token: '請輸入app_token',
+    table_id: 'table_id',
+    input_table_id: '請選擇數據表',
+    view_id: 'view_id',
+    input_view_id: '請選擇視圖',
+    remote_excel_url: '遠端 Excel/CSV 地址',
+    remote_excel_url_placeholder:
+      '請輸入遠端 Excel/CSV 地址，例如 ftp://192.168.1.101/files/data.xlsx',
+    remote_excel_url_empty: '請輸入遠端 Excel/CSV 地址',
+    load_data: '載入資料'
   },
   chart: {
     align: '對齊方式',
@@ -1400,6 +1417,7 @@ export default {
     table_item_height: '表格行高',
     text: '文字',
     axis_show: '軸線顯示',
+    axis_nameShow: '軸名稱顯示',
     axis_color: '軸線顏色',
     axis_width: '軸線寬度',
     axis_type: '軸線類型',
@@ -1759,12 +1777,12 @@ export default {
     axis_tip:
       '最小值、最大值、間隔均為數值類型；若不填，則該項視為自動。 <br/>請確保填入數值能正確計算，否則將無法正常顯示軸值。 ',
     format_tip: `模板變數有{a}, {b}，{c}，{d}，分別表示系列名，資料名，資料值等。 <br>
-在觸發位置為'座標軸' 的時候，會有多個系列的數據，此時可以透過{a0}, {a1}, {a2} 這種後面加索引的方式表示系列的索引。 <br>
-不同圖表類型下的{a}，{b}，{c}，{d} 意義不一樣。 其中變數{a}, {b}, {c}, {d}在不同圖表類型下代表資料意義為：<br><br>
-折線（區域）圖、柱狀（長條）圖、儀錶板: {a}（系列名稱），{b}（類目值），{c}（數值）<br>
-圓餅圖、漏斗圖: {a}（系列名稱），{b}（資料項名稱），{c}（數值）, {d}（百分比）<br>
-地圖: {a}（系列名稱），{b}（區域名稱），{c}（合併數值）, {d}（無）<br>
-散佈圖（氣泡）圖: {a}（系列名稱），{b}（資料名稱），{c}（數值陣列）, {d}（無）`,
+      在觸發位置為'座標軸' 的時候，會有多個系列的數據，此時可以透過{a0}, {a1}, {a2} 這種後面加索引的方式表示系列的索引。 <br>
+      不同圖表類型下的{a}，{b}，{c}，{d} 意義不一樣。 其中變數{a}, {b}, {c}, {d}在不同圖表類型下代表資料意義為：<br><br>
+      折線（區域）圖、柱狀（長條）圖、儀錶板: {a}（系列名稱），{b}（類目值），{c}（數值）<br>
+      圓餅圖、漏斗圖: {a}（系列名稱），{b}（資料項名稱），{c}（數值）, {d}（百分比）<br>
+      地圖: {a}（系列名稱），{b}（區域名稱），{c}（合併數值）, {d}（無）<br>
+      散佈圖（氣泡）圖: {a}（系列名稱），{b}（資料名稱），{c}（數值陣列）, {d}（無）`,
     h_position: '水平位置',
     v_position: '垂直位置',
     p_left: '左對齊',
@@ -1878,13 +1896,22 @@ export default {
     central_point: '中心點',
     full_display: '全量顯示',
     show_hover_style: '顯示滑鼠懸浮樣式',
+    table_header_group: '表頭分組',
+    table_header_group_config: '表頭分組設置',
+    cancel_group: '取消分組',
+    cancel_all_group: '取消所有分組',
+    group_name: '分組名稱',
+    merge_group: '合併分組',
+    table_header_group_config_tip: '字段的增刪，位置變動，顯隱修改都會導致分組失效',
+    group_name_edit_tip: '分組名稱長度為 1-20 個字符',
+    group_name_error_tip: '請輸入正確的分組名稱',
     merge_cells: '合併儲存格',
     length_limit: '長度限制',
     radar_point: '開啟輔助點',
     radar_point_size: '輔助點大小',
     radar_area_color: '開啟面積',
     table_freeze_tip: '合併儲存格後，不支持行列凍結',
-    merge_cells_tips: '合併儲存格後，行列凍結、自動換行會失效',
+    merge_cells_tips: '合併儲存格後，行列凍結、自動換行、班馬紋會失效，當前頁的序號會從 1 開始',
     merge_cells_break_line_tip: '合併儲存格後，不支持自動換行',
     font_family_ya_hei: '微軟雅黙',
     font_family_song_ti: '宋體',
@@ -1955,9 +1982,17 @@ export default {
     circle_packing_padding: '圓形間距',
     increase: '增加',
     decrease: '減少',
-    total: '合計'
+    accumulate: '累加',
+    table_cross_bg_tip: '合併儲存格後，不支持斑馬紋',
+    pivot_export_invalid_field: '行維度或指標維度為空不可導出！',
+    pivot_export_invalid_col_exceed: '表格列數超過最大限制不可導出!',
+    expand_all: '全展開',
+    level_label: '第{num}層級',
+    default_expand_level: '默認展開層級',
+    no_data_or_not_positive: '暫無數據，或數據均不是正數，無法繪製'
   },
   dataset: {
+    field_value: '欄位值',
     scope_edit: '僅編輯時生效',
     scope_all: '資料集預覽時全域生效',
     spend_time: '耗時',
@@ -2238,7 +2273,13 @@ export default {
     batch_manage: '批次管理',
     origin_name: '物理欄位名稱',
     origin_type: '物理字段類型',
-    field_diff: '所選字段類型不一致，不支持轉換'
+    field_diff: '所選字段類型不一致，不支持轉換',
+    create_grouping_field: '新建分組字段',
+    editing_grouping_field: '編輯分組字段',
+    grouping_field: '分組欄位',
+    grouping_settings: '分組設定',
+    ungrouped_value: '未分組的值',
+    please_enter_number: '請輸入數字'
   },
   deDataset: {
     search_by_name: '透過名稱搜尋',
@@ -2736,6 +2777,14 @@ export default {
     column_name: '欄位名稱'
   },
   visualization: {
+    no_details: '無明細數據',
+    sync_pc_design: '同步PC設計',
+    title_background: '標題背景',
+    active_title_background: '激活標題背景',
+    reuse_active_title_background: '復用激活標題背景',
+    inactive_title_background: '非激活標題背景',
+    no_hidden_components: '當前無隱藏組件',
+    hidden_components: '已隱藏的組件',
     dashboard_adaptor: '縮放模式',
     scale_keep_height_and_width: '按畫布比例縮放',
     scale_with_width: '按元件比例縮放',
@@ -2859,7 +2908,7 @@ export default {
     dashboard_configuration: '儀表板配置',
     batch_style_set: '批量設置樣式',
     pic_import_tips: '支持JPG、PNG、GIF、SVG，大小不超過 {0}',
-    pic_size_error: '圖片大小不符合',
+    pic_size_error: '圖片大小不能超過15M',
     re_upload: '重新上傳',
     screen_configuration: '儀表板配置',
     mobile_ios_tips: 'IOS可能無法顯示',
@@ -3640,6 +3689,9 @@ export default {
     oracle_sid: 'SID',
     oracle_service_name: '服務名',
     get_schema: '取得Schema',
+    get_tables: '獲取數據表',
+    get_views: '獲取視圖',
+    view: '視圖',
     schema: 'Schema',
     charset: '字符集',
     targetCharset: '目標字元集',
@@ -3676,7 +3728,9 @@ export default {
     please_select: '請選擇',
     query_timeout: '查詢超時',
     description: '描述',
-    tips: '提示'
+    tips: '提示',
+    replication: 'BE 複本數',
+    replication_tip: 'BE 節點數量'
   },
   sync_summary: {
     summary: '概覽',
@@ -3867,7 +3921,8 @@ export default {
     es_params_tip: '請遵循 Elasitcsearch 的查詢語法',
     dynamic_partition_enable: '動態分區',
     time_end: '結束',
-    es_query_param_formatter_error: '查詢參數格式錯誤，請輸入正確的JSON格式，請檢查'
+    es_query_param_formatter_error: '查詢參數格式錯誤，請輸入正確的JSON格式，請檢查',
+    show_task_id: '查看任務ID'
   },
   watermark: {
     support_params: '目前支援的參數：',
@@ -4011,7 +4066,21 @@ export default {
     on_the_left: '請在左側選擇表單',
     exporting: '後台導出中,可前往',
     progress_to_download: '查看進度，進行下載',
+    clear_selection: '取消選擇',
+    truncate_table: '清空數據',
+    truncate: '清空',
+    confirm_truncate_table: '確定要清空數據嗎？',
+    add_search_condition: '添加篩選條件',
     form: {
+      set_enableDefaultTime: '默認值',
+      currentTime: '當前時間',
+      defaultTime: '固定時間',
+      please_select_valid_column: '請選擇符合要求的字段',
+      create_type: '創建方式',
+      create_new_table: '創建新表',
+      bind_exists_table: '綁定已有表',
+      create_new_column: '新建字段',
+      select_exists_column: '綁定字段',
       add_detail_columns: '添加字段描述',
       detail_columns: '字段描述',
       display_name: '顯示名稱',
@@ -4249,6 +4318,8 @@ export default {
     email: '郵件',
     wecom: '企業微信',
     dingtalk: '釘釘',
+    lark: '飛書',
+    larksuite: '國際飛書',
     notification_setting: '告警通知',
     notification_method: '通知方式',
     notification_user: '通知人',

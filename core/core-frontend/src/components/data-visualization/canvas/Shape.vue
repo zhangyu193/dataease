@@ -10,8 +10,8 @@
     @dblclick="handleDbClick"
   >
     <div
-      title="同步PC设计"
-      v-if="showCheck && ['VQuery'].includes(element.component)"
+      :title="t('visualization.sync_pc_design')"
+      v-if="showCheck"
       class="refresh-from-pc"
       @click="updateFromMobile($event, 'syncPcDesign')"
     >
@@ -27,6 +27,13 @@
       <el-icon>
         <Icon name="mobile-checkbox"><mobileCheckbox class="svg-icon" /></Icon>
       </el-icon>
+    </div>
+    <div v-if="showHiddenIcon" class="del-from-mobile" @mousedown.stop="hiddenComponent">
+      <el-tooltip :content="$t('visualization.hidden')" placement="bottom">
+        <el-icon @click.stop>
+          <Icon @click.stop name="dvHidden"><dvHidden class="svg-icon" /></Icon>
+        </el-icon>
+      </el-tooltip>
     </div>
     <div
       class="shape-outer"
@@ -132,6 +139,7 @@ import Icon from '@/components/icon-custom/src/Icon.vue'
 import ComponentEditBar from '@/components/visualization/ComponentEditBar.vue'
 import { useEmitt } from '@/hooks/web/useEmitt'
 import ComposeShow from '@/components/data-visualization/canvas/ComposeShow.vue'
+import dvHidden from '@/assets/svg/dv-hidden.svg'
 import { groupSizeStyleAdaptor, groupStyleRevert, tabInnerStyleRevert } from '@/utils/style'
 import {
   checkJoinTab,
@@ -143,6 +151,8 @@ import {
 } from '@/utils/canvasUtils'
 import Board from '@/components/de-board/Board.vue'
 import { activeWatermarkCheckUser, removeActiveWatermark } from '@/components/watermark/watermark'
+import { useI18n } from '@/hooks/web/useI18n'
+const { t } = useI18n()
 const dvMainStore = dvMainStoreWithOut()
 const snapshotStore = snapshotStoreWithOut()
 const contextmenuStore = contextmenuStoreWithOut()
@@ -166,7 +176,8 @@ const {
   tabMoveInActiveId,
   tabMoveOutComponentId,
   mobileInPc,
-  mainScrollTop
+  mainScrollTop,
+  hiddenListStatus
 } = storeToRefs(dvMainStore)
 const { editorMap, areaData, isCtrlOrCmdDown } = storeToRefs(composeStore)
 const emit = defineEmits([
@@ -195,7 +206,17 @@ const state = reactive({
   tabMoveInXOffset: 40,
   collisionGap: 10 // 碰撞深度有效区域,
 })
-
+const hiddenComponent = event => {
+  event.preventDefault()
+  event.stopPropagation()
+  if (element.value) {
+    element.value.dashboardHidden = true
+    eventBus.emit('removeMatrixItemPosition-' + canvasId.value, element.value)
+    snapshotStore.recordSnapshotCache('hide')
+    dvMainStore.setLastHiddenComponent(element.value.id)
+  }
+}
+const showHiddenIcon = computed(() => hiddenListStatus.value && isMainCanvas(canvasId.value))
 const contentDisplay = ref(true)
 const shapeLock = computed(() => {
   return element.value['isLock'] && isEditMode.value
@@ -629,7 +650,8 @@ const handleMouseDownOnShape = e => {
   const up = () => {
     dashboardActive.value && emit('onMouseUp')
     element.value['dragging'] = false
-    hasMove && snapshotStore.recordSnapshotCache('shape-handleMouseDownOnShape-up')
+    hasMove &&
+      snapshotStore.recordSnapshotCacheWithPositionChange('shape-handleMouseDownOnShape-up')
     // 触发元素停止移动事件，用于隐藏标线
     eventBus.emit('unMove')
     document.removeEventListener('mousemove', move)
@@ -813,7 +835,8 @@ const handleMouseDownOnPoint = (point, e) => {
     element.value['resizing'] = false
     document.removeEventListener('mousemove', move)
     document.removeEventListener('mouseup', up)
-    needSave && snapshotStore.recordSnapshotCache('shape-handleMouseDownOnPoint-up')
+    needSave &&
+      snapshotStore.recordSnapshotCacheWithPositionChange('shape-handleMouseDownOnPoint-up')
     handleGroupComponent()
   }
 
@@ -1084,12 +1107,14 @@ const dragCollision = computed(() => {
 
 const htmlToImage = () => {
   downLoading.value = true
+  useEmitt().emitter.emit('l7-prepare-picture', element.value.id)
   setTimeout(() => {
     activeWatermarkCheckUser(viewDemoInnerId.value, 'canvas-main', scale.value)
     downloadCanvas2('img', componentInnerRef.value, '图表', () => {
       // do callback
       removeActiveWatermark(viewDemoInnerId.value)
       downLoading.value = false
+      useEmitt().emitter.emit('l7-unprepare-picture', element.value.id)
     })
   }, 200)
 }
@@ -1115,13 +1140,11 @@ onMounted(() => {
   })
   settingAttribute()
   const methodName = 'componentImageDownload-' + element.value.id
-  useEmitt().emitter.off(methodName)
-  useEmitt({
-    name: methodName,
-    callback: () => {
+  if (!useEmitt().emitter.all.get(methodName)?.length) {
+    useEmitt().emitter.on(methodName, () => {
       htmlToImage()
-    }
-  })
+    })
+  }
 })
 </script>
 

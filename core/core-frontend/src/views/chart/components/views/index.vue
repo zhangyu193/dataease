@@ -77,7 +77,8 @@ const {
   canvasStyleData,
   mobileInPc,
   inMobile,
-  editMode
+  editMode,
+  hiddenListStatus
 } = storeToRefs(dvMainStore)
 
 const props = defineProps({
@@ -244,14 +245,6 @@ const clearViewLinkage = () => {
   useEmitt().emitter.emit('clearPanelLinkage', { viewId: element.value.id })
 }
 
-watch(
-  [() => view.value],
-  () => {
-    initTitle()
-  },
-  { deep: true }
-)
-
 watch([() => scale.value], () => {
   initTitle()
 })
@@ -356,10 +349,7 @@ const chartClick = param => {
     ElMessage.error(t('chart.drill_field_error'))
     return
   }
-  if (
-    view.value.type === 'circle-packing' &&
-    (param.data?.childNodeCount === 0 || param.data.name === t('commons.all'))
-  ) {
+  if (view.value.type === 'circle-packing' && param.data.name === t('commons.all')) {
     ElMessage.error(t('chart.last_layer'))
     return
   }
@@ -413,26 +403,6 @@ const windowsJump = (url, jumpType, size = 'middle') => {
     let newWindow
     if ('newPop' === jumpType) {
       dePreviewPopDialogRef.value.previewInit({ url, size })
-      // let sizeX, sizeY
-      // if (size === 'large') {
-      //   sizeX = 0.95
-      //   sizeY = 0.9
-      // } else if (size === 'middle') {
-      //   sizeX = 0.8
-      //   sizeY = 0.75
-      // } else {
-      //   sizeX = 0.6
-      //   sizeY = 0.5
-      // }
-      // const height = screen.height * sizeY
-      // const width = screen.width * sizeX
-      // const left = screen.width * ((1 - sizeX) / 2)
-      // const top = screen.height * ((1 - sizeY) / 2)
-      // newWindow = window.open(
-      //   url,
-      //   '_blank',
-      //   `width=${width},height=${height},left=${left},top=${top},toolbar=no,scrollbars=yes,resizable=yes,location=no`
-      // )
     } else if ('_self' === jumpType) {
       newWindow = window.open(url, jumpType)
       if (inMobile.value) {
@@ -517,7 +487,7 @@ const jumpClick = param => {
           if (jumpInfo.publicJumpId) {
             let url = `${embeddedBaseUrl}#/de-link/${
               jumpInfo.publicJumpId
-            }?fromLink=true&jumpInfoParam=${encodeURIComponent(
+            }?fromLink=true&ignoreParams=true&jumpInfoParam=${encodeURIComponent(
               Base64.encode(JSON.stringify(param))
             )}`
             if (attachParamsInfo) {
@@ -532,7 +502,9 @@ const jumpClick = param => {
         } else {
           let url = `${embeddedBaseUrl}#/preview?dvId=${
             jumpInfo.targetDvId
-          }&fromLink=true&jumpInfoParam=${encodeURIComponent(Base64.encode(JSON.stringify(param)))}`
+          }&fromLink=true&ignoreParams=true&jumpInfoParam=${encodeURIComponent(
+            Base64.encode(JSON.stringify(param))
+          )}`
           if (attachParamsInfo) {
             url = url + attachParamsInfo
           }
@@ -1056,6 +1028,14 @@ const titleTooltipWidth = computed(() => {
   }
   return '500px'
 })
+const clearG2Tooltip = () => {
+  const g2TooltipWrapper = document.getElementById('g2-tooltip-wrapper')
+  if (g2TooltipWrapper) {
+    for (const ele of g2TooltipWrapper.children) {
+      ele.style.display = 'none'
+    }
+  }
+}
 </script>
 
 <template>
@@ -1196,6 +1176,7 @@ const titleTooltipWidth = computed(() => {
         :show-position="showPosition"
         :suffixId="suffixId"
         :font-family="fontFamily"
+        @touchstart="clearG2Tooltip"
       />
       <chart-component-g2-plot
         :scale="scale"
@@ -1235,6 +1216,7 @@ const titleTooltipWidth = computed(() => {
       v-if="(!chartAreaShow || showEmpty) && !allEmptyCheck"
       :themes="canvasStyleData.dashboard.themeColor"
       :view-icon="view.type"
+      @touchstart="clearG2Tooltip"
     ></chart-empty-info>
     <drill-path
       :disabled="optType === 'enlarge'"
@@ -1263,6 +1245,7 @@ const titleTooltipWidth = computed(() => {
   overflow: hidden;
 }
 .title-container {
+  position: relative;
   margin: 0;
   width: 100%;
 

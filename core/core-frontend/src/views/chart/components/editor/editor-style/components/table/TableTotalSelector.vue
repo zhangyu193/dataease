@@ -32,6 +32,7 @@ watch(
 )
 
 const aggregations = [
+  { name: t('chart.none'), value: 'NONE' },
   { name: t('chart.sum'), value: 'SUM' },
   { name: t('chart.avg'), value: 'AVG' },
   { name: t('chart.max'), value: 'MAX' },
@@ -469,7 +470,7 @@ onMounted(() => {
         <el-radio-group
           :effect="themes"
           v-model="state.tableTotalForm.row.reverseSubLayout"
-          :disabled="chart.xAxis.length < 2"
+          :disabled="chart.xAxis.length < 2 || state.basicStyleForm.tableLayoutMode === 'tree'"
           @change="changeTableTotal('row')"
         >
           <el-radio :effect="themes" :label="true">{{ t('chart.total_pos_top') }}</el-radio>

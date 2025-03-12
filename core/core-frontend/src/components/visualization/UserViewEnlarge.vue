@@ -121,12 +121,19 @@
           :font-family="canvasStyleData?.fontFamily"
           show-position="viewDialog"
         />
-        <chart-component-s2
-          v-if="optType === 'details' && !sourceViewType.includes('chart-mix')"
-          :view="viewInfo"
-          show-position="viewDialog"
-          ref="chartComponentDetails"
-        />
+        <template v-if="optType === 'details' && !sourceViewType.includes('chart-mix')">
+          <chart-component-s2
+            v-if="!detailsError"
+            :view="viewInfo"
+            show-position="viewDialog"
+            ref="chartComponentDetails"
+          />
+          <empty-background
+            v-if="detailsError"
+            :description="t('visualization.no_details')"
+            img-type="noneWhite"
+          />
+        </template>
         <template v-else-if="optType === 'details' && sourceViewType.includes('chart-mix')">
           <el-tabs class="tab-header" v-model="activeName" @tab-change="handleClick">
             <el-tab-pane :label="t('chart.drag_block_value_axis_left')" name="left"></el-tab-pane>
@@ -173,6 +180,8 @@ import { usePermissionStoreWithOut } from '@/store/modules/permission'
 import { activeWatermarkCheckUser } from '@/components/watermark/watermark'
 import { getCanvasStyle } from '@/utils/style'
 import { exportPermission } from '@/utils/utils'
+import EmptyBackground from '../empty-background/src/EmptyBackground.vue'
+import { supportExtremumChartType } from '@/views/chart/components/js/extremumUitl'
 const downLoading = ref(false)
 const dvMainStore = dvMainStoreWithOut()
 const dialogShow = ref(false)
@@ -180,16 +189,16 @@ const requestStore = useRequestStoreWithOut()
 const permissionStore = usePermissionStoreWithOut()
 let viewInfo = ref<DeepPartial<ChartObj>>(null)
 const config = ref(null)
-const canvasStyleData = ref(null)
 const viewContainer = ref(null)
 const { t } = useI18n()
 const optType = ref(null)
 const chartComponentDetails = ref(null)
 const chartComponentDetails2 = ref(null)
-const { dvInfo, editMode, isIframe } = storeToRefs(dvMainStore)
+const { dvInfo, editMode, isIframe, canvasStyleData } = storeToRefs(dvMainStore)
 const exportLoading = ref(false)
 const sourceViewType = ref()
 const activeName = ref('left')
+const detailsError = ref(false)
 const DETAIL_CHART_ATTR: DeepPartial<ChartObj> = {
   render: 'antv',
   type: 'table-info',
@@ -240,8 +249,7 @@ const exportPermissions = computed(() =>
 
 const customExport = computed(() => {
   const style =
-    canvasStyleData.value &&
-    (optType.value === 'enlarge' || state.componentSourceType?.includes('table'))
+    canvasStyleData.value && optType.value === 'enlarge'
       ? getCanvasStyle(canvasStyleData.value, 'canvas-main')
       : {}
   if (downLoading.value) {
@@ -295,6 +303,7 @@ const pixelOptions = [
 const dialogInit = (canvasStyle, view, item, opt, params = { scale: 0.5 }) => {
   state.scale = params.scale
   sourceViewType.value = view.type
+  detailsError.value = false
   optType.value = opt
   dialogShow.value = true
   state.componentSourceType = view.type
@@ -302,7 +311,6 @@ const dialogInit = (canvasStyle, view, item, opt, params = { scale: 0.5 }) => {
   viewInfo.value = deepCopy(view) as DeepPartial<ChartObj>
   viewInfo.value.customStyle.text.show = false
   config.value = deepCopy(item)
-  canvasStyleData.value = canvasStyle
   if (opt === 'details') {
     if (!viewInfo.value.type?.includes('table')) {
       assign(viewInfo.value, DETAIL_CHART_ATTR)
@@ -321,11 +329,15 @@ const dialogInit = (canvasStyle, view, item, opt, params = { scale: 0.5 }) => {
 const dataDetailsOpt = () => {
   nextTick(() => {
     const viewDataInfo = dvMainStore.getViewDataDetails(viewInfo.value.id)
-    if (sourceViewType.value.includes('chart-mix')) {
-      chartComponentDetails.value?.renderChartFromDialog(viewInfo.value, viewDataInfo.left)
-      chartComponentDetails2.value?.renderChartFromDialog(viewInfo.value, viewDataInfo.right)
+    if (viewDataInfo) {
+      if (sourceViewType.value.includes('chart-mix')) {
+        chartComponentDetails.value?.renderChartFromDialog(viewInfo.value, viewDataInfo.left)
+        chartComponentDetails2.value?.renderChartFromDialog(viewInfo.value, viewDataInfo.right)
+      } else {
+        chartComponentDetails.value.renderChartFromDialog(viewInfo.value, viewDataInfo)
+      }
     } else {
-      chartComponentDetails.value.renderChartFromDialog(viewInfo.value, viewDataInfo)
+      detailsError.value = true
     }
   })
 }
@@ -406,10 +418,18 @@ const openMessageLoading = cb => {
     customClass
   })
 }
+// 地图
+const mapChartTypes = ['bubble-map', 'flow-map', 'heat-map', 'map', 'symbolic-map']
 const htmlToImage = () => {
-  downLoading.value = true
+  downLoading.value = mapChartTypes.includes(viewInfo.value.type) ? false : true
   useEmitt().emitter.emit('renderChart-' + viewInfo.value.id)
-  const renderTime = viewInfo.value.type?.includes('table') ? 2000 : 500
+  useEmitt().emitter.emit('l7-prepare-picture', viewInfo.value.id)
+  // 表格和支持最值图表的渲染时间为2000毫秒，其他图表为500毫秒。
+  const renderTime =
+    viewInfo.value.type?.includes('table') ||
+    supportExtremumChartType({ type: viewInfo.value.type })
+      ? 2000
+      : 500
   setTimeout(() => {
     initWatermark()
     toPng(viewContainer.value)
@@ -419,12 +439,14 @@ const htmlToImage = () => {
         a.setAttribute('download', viewInfo.value.title)
         a.href = dataUrl
         a.click()
+        useEmitt().emitter.emit('l7-unprepare-picture', viewInfo.value.id)
         useEmitt().emitter.emit('renderChart-' + viewInfo.value.id)
         initWatermark()
       })
       .catch(error => {
         downLoading.value = false
         initWatermark()
+        useEmitt().emitter.emit('l7-unprepare-picture', viewInfo.value.id)
         useEmitt().emitter.emit('renderChart-' + viewInfo.value.id)
         console.error('oops, something went wrong!', error)
       })

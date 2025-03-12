@@ -158,7 +158,7 @@ onMounted(() => {
 const reUpload = e => {
   const file = e.target.files[0]
   if (file.size > 15000000) {
-    ElMessage.success('图片大小不符合')
+    ElMessage.success('图片大小不能超过15M')
     return
   }
   uploadFileResult(file, fileUrl => {
@@ -283,6 +283,7 @@ const onTitleChange = () => {
                 :effect="themes"
                 v-model="chart.customStyle.component.titleColor"
                 :trigger-width="204"
+                show-alpha
                 :disabled="!chart.customStyle.component.titleShow"
                 is-custom
                 :predefine="COLOR_PANEL"
@@ -297,28 +298,52 @@ const onTitleChange = () => {
           </el-form>
         </el-collapse-item>
         <el-collapse-item :effect="themes" name="addition" :title="t('v_query.query_condition')">
-          <el-form @keydown.stop.prevent.enter label-position="top">
-            <el-form-item class="form-item margin-bottom-8" :class="'form-item-' + themes">
-              <el-checkbox
-                :effect="themes"
-                size="small"
-                v-model="chart.customStyle.component.borderShow"
-              >
-                {{ t('visualization.board') }}
-              </el-checkbox>
-            </el-form-item>
+          <el-form @keydown.stop.prevent.enter label-position="top" style="padding-bottom: 8px">
+            <el-row :gutter="8">
+              <el-col :span="12">
+                <el-form-item
+                  :label="t('visualization.board')"
+                  class="form-item w100"
+                  :class="'form-item-' + themes"
+                >
+                  <el-color-picker
+                    :effect="themes"
+                    :trigger-width="106"
+                    is-custom
+                    show-alpha
+                    v-model="chart.customStyle.component.borderColor"
+                    :predefine="predefineColors"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item
+                  :label="t('chart.background')"
+                  class="form-item w100"
+                  :class="'form-item-' + themes"
+                >
+                  <el-color-picker
+                    :effect="themes"
+                    :trigger-width="106"
+                    is-custom
+                    show-alpha
+                    v-model="chart.customStyle.component.bgColor"
+                    :predefine="predefineColors"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
             <el-form-item
+              :effect="themes"
               class="form-item"
-              style="padding-left: 20px"
+              :label="t('visualization.query_condition_space')"
               :class="'form-item-' + themes"
             >
-              <el-color-picker
+              <el-input-number
+                v-model="chart.customStyle.component.queryConditionSpacing"
+                :min="0"
                 :effect="themes"
-                :trigger-width="108"
-                is-custom
-                v-model="chart.customStyle.component.borderColor"
-                :disabled="!chart.customStyle.component.borderShow"
-                :predefine="predefineColors"
+                controls-position="right"
               />
             </el-form-item>
             <el-form-item class="form-item margin-bottom-8" :class="'form-item-' + themes">
@@ -342,6 +367,7 @@ const onTitleChange = () => {
                   :effect="themes"
                   :trigger-width="56"
                   is-custom
+                  show-alpha
                   v-model="chart.customStyle.component.text"
                   :disabled="!chart.customStyle.component.placeholderShow"
                   @change="handleCurrentPlaceholderCustomChange"
@@ -397,46 +423,11 @@ const onTitleChange = () => {
             >
               <el-input-number
                 :effect="themes"
+                :min="100"
                 controls-position="right"
                 @change="handleCurrentPlaceholderChange"
                 :disabled="!chart.customStyle.component.placeholderShow || !currentPlaceholder"
                 v-model.lazy="currentSearch.queryConditionWidth"
-              />
-            </el-form-item>
-            <el-form-item class="form-item margin-bottom-8" :class="'form-item-' + themes">
-              <el-checkbox
-                :effect="themes"
-                size="small"
-                v-model="chart.customStyle.component.bgColorShow"
-              >
-                {{ t('visualization.custom_query_bg_color') }}
-              </el-checkbox>
-            </el-form-item>
-            <el-form-item
-              class="form-item"
-              style="padding-left: 20px"
-              :class="'form-item-' + themes"
-            >
-              <el-color-picker
-                :effect="themes"
-                :trigger-width="108"
-                is-custom
-                v-model="chart.customStyle.component.bgColor"
-                :disabled="!chart.customStyle.component.bgColorShow"
-                :predefine="predefineColors"
-              />
-            </el-form-item>
-            <el-form-item
-              :effect="themes"
-              class="form-item"
-              :label="t('visualization.query_condition_space')"
-              :class="'form-item-' + themes"
-            >
-              <el-input-number
-                v-model="chart.customStyle.component.queryConditionSpacing"
-                :min="0"
-                :effect="themes"
-                controls-position="right"
               />
             </el-form-item>
           </el-form>
@@ -451,6 +442,7 @@ const onTitleChange = () => {
             :class="!chart.customStyle.component.labelShow && 'is-disabled'"
             :disabled="!chart.customStyle.component.labelShow"
             label-position="top"
+            style="padding-bottom: 8px"
           >
             <el-form-item
               :effect="themes"
@@ -475,6 +467,7 @@ const onTitleChange = () => {
               <el-color-picker
                 :effect="themes"
                 is-custom
+                show-alpha
                 v-model="chart.customStyle.component.labelColor"
                 :predefine="predefineColors"
               /><el-tooltip
@@ -553,7 +546,7 @@ const onTitleChange = () => {
           </el-form>
         </collapse-switch-item>
         <el-collapse-item :effect="themes" name="button" :title="t('commons.button')">
-          <el-form @keydown.stop.prevent.enter label-position="top">
+          <el-form @keydown.stop.prevent.enter label-position="top" style="padding-bottom: 8px">
             <el-form-item
               :effect="themes"
               class="form-item"
@@ -592,6 +585,7 @@ const onTitleChange = () => {
                 :effect="themes"
                 :trigger-width="108"
                 is-custom
+                show-alpha
                 v-model="chart.customStyle.component.btnColor"
                 :predefine="predefineColors"
               />
@@ -604,6 +598,7 @@ const onTitleChange = () => {
               <el-color-picker
                 :effect="themes"
                 is-custom
+                show-alpha
                 v-model="chart.customStyle.component.labelColorBtn"
                 :predefine="predefineColors"
               /><el-tooltip

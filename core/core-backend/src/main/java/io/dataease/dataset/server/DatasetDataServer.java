@@ -6,6 +6,7 @@ import io.dataease.api.dataset.dto.EnumValueRequest;
 import io.dataease.api.dataset.dto.MultFieldValuesRequest;
 import io.dataease.api.dataset.dto.PreviewSqlDTO;
 import io.dataease.api.dataset.union.DatasetGroupInfoDTO;
+import io.dataease.api.dataset.dto.EnumObj;
 import io.dataease.dataset.manage.DatasetDataManage;
 import io.dataease.extensions.datasource.dto.DatasetTableDTO;
 import io.dataease.extensions.datasource.dto.DatasetTableFieldDTO;
@@ -44,6 +45,17 @@ public class DatasetDataServer implements DatasetDataApi {
     @Override
     public Map<String, Object> previewSqlCheck(PreviewSqlDTO dto) throws Exception {
         return datasetDataManage.previewSql(dto);
+    }
+
+    @Override
+    public List<String> getFieldEnumDs(EnumObj map) throws Exception {
+        try {
+            return datasetDataManage.getFieldEnumDs(map);
+        } catch (Exception e) {
+            e.printStackTrace();
+            LogUtil.error(e);
+            return null;
+        }
     }
 
     @Override

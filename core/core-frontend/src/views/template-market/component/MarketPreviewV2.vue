@@ -135,7 +135,7 @@
           </div>
         </el-row>
         <el-row v-if="state.curTemplate" class="img-main">
-          <img style="height: 100%" :src="imgUrlTrans(state.templatePreviewUrl)" alt="" />
+          <img :src="imgUrlTrans(state.templatePreviewUrl)" alt="" />
         </el-row>
       </el-col>
     </el-row>
@@ -151,7 +151,7 @@ import { searchMarketPreview } from '@/api/templateMarket'
 import { onMounted, reactive, watch, ref } from 'vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import TemplateMarketPreviewItem from '@/views/template-market/component/TemplateMarketPreviewItem.vue'
-import { deepCopy } from '@/utils/utils'
+import { deepCopy, getActiveCategories } from '@/utils/utils'
 import { imgUrlTrans } from '@/utils/imgUtils'
 
 const { t } = useI18n()
@@ -269,6 +269,11 @@ const initMarketTemplate = () => {
       state.marketTemplatePreviewShowList = rsp.data.contents
       state.hasResult = true
       state.categories = rsp.data.categories
+      initTemplateShow()
+      const activeCategoriesShow = getActiveCategories(state.currentMarketTemplateShowList)
+      state.categories = rsp.data.categories.filter(category =>
+        activeCategoriesShow.has(category.label)
+      )
       activeCategories.value = deepCopy(state.categories)
       if (props.previewId) {
         state.marketTemplatePreviewShowList.forEach(categoryTemplates => {
@@ -377,9 +382,10 @@ onMounted(() => {
   }
 }
 .aside-list {
-  padding: 0px 12px 12px 12px;
+  padding: 0 12px 12px 12px;
   width: 100%;
   height: calc(100vh - 200px);
+  overflow-x: hidden;
   //overflow-y: auto;
   :deep(.ed-collapse) {
     --ed-collapse-header-font-size: 14px !important;
@@ -506,6 +512,7 @@ onMounted(() => {
   white-space: nowrap;
   cursor: pointer;
   color: var(--TextPrimary, #1f2329);
+  background: rgba(255, 255, 255, 1);
   -webkit-appearance: none;
   text-align: center;
   box-sizing: border-box;
@@ -514,16 +521,14 @@ onMounted(() => {
   transition: 0.1s;
   border-radius: 3px;
 
-  &:active {
-    color: #000;
-    border-color: #3a8ee6;
-    background-color: red;
-    outline: 0;
+  &:hover {
+    background-color: rgba(245, 246, 247, 1);
+    border-color: rgba(187, 191, 196, 1);
   }
 
-  &:hover {
-    background-color: rgba(31, 35, 41, 0.1);
-    color: #3a8ee6;
+  &:active {
+    background-color: rgba(239, 240, 241, 1);
+    border-color: rgba(187, 191, 196, 1);
   }
 }
 
@@ -611,6 +616,13 @@ onMounted(() => {
   width: 100%;
   height: calc(100% - 76px) !important;
 }
+
+.img-main img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* 保持图片比例，不裁剪 */
+}
+
 .open-button {
   cursor: pointer;
   font-size: 30px;
@@ -638,13 +650,11 @@ onMounted(() => {
 }
 
 .filter-icon-active {
-  border: 1px solid var(--ed-color-primary);
+  border: 1px solid var(--ed-color-primary) !important;
   color: var(--ed-color-primary);
-}
-
-.filter-icon-active {
-  border: 1px solid var(--ed-color-primary);
-  color: var(--ed-color-primary);
+  &:hover {
+    background-color: rgba(225, 234, 255, 1);
+  }
 }
 
 .search-area {
@@ -658,8 +668,8 @@ onMounted(() => {
   cursor: pointer;
   font-weight: 400;
   color: #646a73;
-  min-width: 64px;
   height: 22px;
+  line-height: 22px;
   display: flex;
   align-items: center;
   white-space: nowrap;
@@ -675,7 +685,7 @@ onMounted(() => {
     height: 100%;
     transform: translate(-50%, -50%);
     display: none;
-    border-radius: 4px 0 0 0;
+    border-radius: 4px;
   }
 
   &:hover {
@@ -700,9 +710,10 @@ onMounted(() => {
   font-weight: 400;
   color: #1f2329;
   cursor: default;
+  margin-left: 4px;
 }
 .mp-divider {
-  border-color: #1f232926;
+  border-color: rgba(31, 35, 41, 0.15);
   margin-top: 16px;
   margin-bottom: 8px;
 }

@@ -175,7 +175,7 @@ const toolTip = computed(() => {
 })
 
 const templateStatusShow = computed(() => {
-  return view.value['dataFrom'] === 'template'
+  return view.value['dataFrom'] === 'template' && !mobileInPc.value
 })
 
 const { view } = toRefs(props)
@@ -358,6 +358,12 @@ const treeProps = {
 const recordSnapshotInfo = type => {
   view.value['dataFrom'] = 'calc'
   snapshotStore.recordSnapshotCache(type, view.value.id)
+}
+
+const changeDataset = () => {
+  // change dataset, do clear field or other thing
+  view.value['calParams'] = []
+  recordSnapshotInfo('calcData')
 }
 
 const filterNode = (value, data) => {
@@ -910,7 +916,16 @@ const calcData = (view, resetDrill = false, updateQuery = '') => {
   if (resetDrill) {
     useEmitt().emitter.emit('resetDrill-' + view.id, 0)
   } else {
-    useEmitt().emitter.emit('calcData-' + view.id, view)
+    if (mobileInPc.value) {
+      //移动端设计
+      useEmitt().emitter.emit('onMobileStatusChange', {
+        type: 'componentStyleChange',
+        value: { type: 'calcData', component: JSON.parse(JSON.stringify(view)) }
+      })
+    } else {
+      useEmitt().emitter.emit('calcData-' + view.id, view)
+      snapshotStore.recordSnapshotCache('renderChart', view.id)
+    }
   }
   snapshotStore.recordSnapshotCache('calcData', view.id)
   if (updateQuery === 'updateQuery') {
@@ -1498,13 +1513,18 @@ const addDsWindow = () => {
 const editDs = () => {
   const path =
     embeddedStore.getToken && appStore.getIsIframe ? 'dataset-embedded-form' : '/dataset-form'
+  const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
+  // 此处校验提前 防止router返回时找到错误的路径
+  if (openType === '_self' && !dvInfo.value.id) {
+    ElMessage.warning(t('visualization.save_page_tips'))
+    return
+  }
   let routeData = router.resolve({
     path: path,
     query: {
       id: view.value.tableId
     }
   })
-  const openType = wsCache.get('open-backend') === '1' ? '_self' : '_blank'
   // 检查是否保存
   if (openType === '_self') {
     if (!dvInfo.value.id) {
@@ -1512,6 +1532,7 @@ const editDs = () => {
       return
     }
     canvasSave(() => {
+      wsCache.delete('DE-DV-CATCH-' + dvInfo.value.id)
       const newWindow = window.open(routeData.href, openType)
       initOpenHandler(newWindow)
     })
@@ -1607,6 +1628,12 @@ const saveValueFormatter = () => {
   }
   closeValueFormatter()
 }
+
+const elRowStyle = computed(() => {
+  return {
+    height: embeddedStore.getToken ? 'calc(100% - 45px)' : 'calc(100vh - 110px)'
+  }
+})
 
 const addCalcField = groupType => {
   editCalcField.value = true
@@ -2038,7 +2065,7 @@ const deleteChartFieldItem = id => {
               </div>
             </el-row>
 
-            <el-row style="height: calc(100vh - 110px)">
+            <el-row :style="elRowStyle">
               <el-scrollbar v-if="view.type === 'VQuery' && curComponent">
                 <div class="query-style-tab">
                   <div style="padding-top: 1px">
@@ -3404,7 +3431,7 @@ const deleteChartFieldItem = id => {
                   :state-obj="state"
                   :themes="themes"
                   @add-ds-window="addDsWindow"
-                  @on-dataset-change="recordSnapshotInfo('calcData')"
+                  @on-dataset-change="changeDataset"
                 />
                 <el-tooltip
                   :effect="toolTip"
@@ -3816,7 +3843,7 @@ const deleteChartFieldItem = id => {
         </div>
       </el-row>
     </template>
-    <chart-template-info v-if="templateStatusShow"></chart-template-info>
+    <chart-template-info v-if="templateStatusShow" :themes="themes"></chart-template-info>
     <!--显示名修改-->
     <el-dialog
       v-model="state.renameItem"
@@ -5070,6 +5097,7 @@ span {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
+  z-index: 1000;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
 .style-collapse {

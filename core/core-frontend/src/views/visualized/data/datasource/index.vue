@@ -49,7 +49,8 @@ import {
   uploadFile,
   perDeleteDatasource,
   getSimpleDs,
-  supportSetKey
+  supportSetKey,
+  getTableStatus
 } from '@/api/datasource'
 import CreatDsGroup from './form/CreatDsGroup.vue'
 import type { Tree } from '../dataset/form/CreatDsGroup.vue'
@@ -74,7 +75,7 @@ import {
 } from '@/api/datasource'
 import type { SyncSetting, Node } from './form/option'
 import EditorDatasource from './form/index.vue'
-import ExcelInfo from './ExcelInfo.vue'
+import ExcelInfoBase from './ExcelInfoBase.vue'
 import SheetTabs from './SheetTabs.vue'
 import BaseInfoItem from './BaseInfoItem.vue'
 import BaseInfoContent from './BaseInfoContent.vue'
@@ -292,7 +293,7 @@ const validateDS = () => {
   Object.assign(nodeTmpInfo, cloneDeep(nodeInfo))
   validateById(nodeTmpInfo.id as number)
     .then(res => {
-      if (res.data.type === 'API') {
+      if (res.data.type.startsWith('API')) {
         let error = 0
         const dsStatus = JSON.parse(res.data.status)
         for (let i = 0; i < dsStatus.length; i++) {
@@ -707,7 +708,7 @@ const filterNode = (value: string, data: BusiTreeNode) => {
 }
 
 const editDatasource = (editType?: number) => {
-  if (nodeInfo.type === 'Excel') {
+  if (nodeInfo.type.startsWith('Excel')) {
     nodeInfo.editType = editType
   }
   return getById(nodeInfo.id).then(res => {
@@ -828,7 +829,7 @@ const handleCopy = async data => {
     datasource.id = ''
     datasource.copy = true
     datasource.name = t('datasource.copy')
-    if (datasource.type === 'API') {
+    if (datasource.type.startsWith('API')) {
       for (let i = 0; i < datasource.apiConfiguration.length; i++) {
         datasource.apiConfiguration[i].deTableName = ''
       }
@@ -940,7 +941,7 @@ const handleClick = (tabName: TabPaneName) => {
   switch (tabName) {
     case 'config':
       tableData.value = []
-      if (nodeInfo.type === 'Excel') {
+      if (nodeInfo.type.startsWith('Excel')) {
         listDatasourceTables({ datasourceId: nodeInfo.id }).then(res => {
           tabList.value = res.data.map(ele => {
             const { name, tableName } = ele
@@ -962,6 +963,26 @@ const handleClick = (tabName: TabPaneName) => {
       listDatasourceTables({ datasourceId: nodeInfo.id }).then(res => {
         tableData.value = res.data
         initSearch()
+        if (nodeInfo.type.startsWith('API') || nodeInfo.type === 'ExcelRemote') {
+          getTableStatus({ datasourceId: nodeInfo.id }).then(res => {
+            for (let i = 0; i < state.filterTable.length; i++) {
+              for (let j = 0; j < res.data.length; j++) {
+                if (state.filterTable[i].tableName === res.data[j].tableName) {
+                  state.filterTable[i].lastUpdateTime = res.data[j].lastUpdateTime
+                  state.filterTable[i].status = res.data[j].status
+                }
+              }
+            }
+            for (let i = 0; i < tableData.value.length; i++) {
+              for (let j = 0; j < res.data.length; j++) {
+                if (tableData.value[i].tableName === res.data[j].tableName) {
+                  tableData.value[i].lastUpdateTime = res.data[j].lastUpdateTime
+                  tableData.value[i].status = res.data[j].status
+                }
+              }
+            }
+          })
+        }
       })
       break
     default:
@@ -1390,7 +1411,7 @@ const getMenuList = (val: boolean) => {
               <el-table-column
                 key="status"
                 prop="status"
-                v-if="['api'].includes(nodeInfo.type.toLowerCase())"
+                v-if="nodeInfo.type.startsWith('API')"
                 :label="t('data_source.latest_update_status')"
               >
                 <template #default="scope">
@@ -1420,7 +1441,10 @@ const getMenuList = (val: boolean) => {
               <el-table-column
                 key="lastUpdateTime"
                 prop="lastUpdateTime"
-                v-if="['excel', 'api'].includes(nodeInfo.type.toLowerCase())"
+                v-if="
+                  ['excel', 'api'].includes(nodeInfo.type.toLowerCase()) ||
+                  nodeInfo.type.startsWith('API')
+                "
                 :label="t('data_source.latest_update_time')"
               >
                 <template v-slot:default="scope">
@@ -1466,7 +1490,7 @@ const getMenuList = (val: boolean) => {
             <template v-if="slotProps.active">
               <el-row :gutter="24">
                 <el-col :span="12">
-                  <BaseInfoItem :label="t('auth.datasource') + ' ' + t('common.name')">{{
+                  <BaseInfoItem :label="t('data_source.data_source_name')">{{
                     nodeInfo.name
                   }}</BaseInfoItem>
                 </el-col>
@@ -1479,17 +1503,32 @@ const getMenuList = (val: boolean) => {
               <el-row :gutter="24">
                 <el-col v-if="nodeInfo.type === 'Excel'" :span="12">
                   <BaseInfoItem :label="t('data_source.document')">
-                    <ExcelInfo :name="nodeInfo.fileName" :size="nodeInfo.size"></ExcelInfo>
+                    <ExcelInfoBase :name="nodeInfo.fileName" :size="nodeInfo.size"></ExcelInfoBase>
                   </BaseInfoItem>
                 </el-col>
-                <el-col v-else :span="24">
+                <el-col v-if="nodeInfo.type === 'ExcelRemote'" :span="12">
+                  <BaseInfoItem :label="t('datasource.remote_excel_url')">
+                    {{ nodeInfo.configuration.url }}
+                  </BaseInfoItem>
+                </el-col>
+                <el-col v-if="nodeInfo.type === 'ExcelRemote'" :span="12">
+                  <BaseInfoItem :label="t('data_source.document')">
+                    <ExcelInfoBase :name="nodeInfo.fileName" :size="nodeInfo.size"></ExcelInfoBase>
+                  </BaseInfoItem>
+                </el-col>
+                <el-col v-if="!nodeInfo.type.startsWith('Excel')" :span="24">
                   <BaseInfoItem :label="t('common.description')">{{
                     nodeInfo.description
                   }}</BaseInfoItem>
                 </el-col>
               </el-row>
               <template
-                v-if="!['Excel', 'API', 'es'].includes(nodeInfo.type) && nodeInfo.weight >= 7"
+                v-if="
+                  !['Excel', 'es'].includes(nodeInfo.type) &&
+                  !nodeInfo.type.startsWith('API') &&
+                  !nodeInfo.type.startsWith('Excel') &&
+                  nodeInfo.weight >= 7
+                "
               >
                 <el-row :gutter="24" v-show="nodeInfo.configuration.urlType !== 'jdbcUrl'">
                   <el-col :span="12">
@@ -1639,7 +1678,7 @@ const getMenuList = (val: boolean) => {
             </template>
           </BaseInfoContent>
           <BaseInfoContent
-            v-if="nodeInfo.type === 'API' && nodeInfo.weight >= 7"
+            v-if="nodeInfo.type.startsWith('API') && nodeInfo.weight >= 7"
             v-slot="slotProps"
             :name="t('datasource.data_table')"
           >
@@ -1691,7 +1730,47 @@ const getMenuList = (val: boolean) => {
             </el-button>
           </BaseInfoContent>
           <BaseInfoContent
-            v-if="nodeInfo.type === 'API' && nodeInfo.weight >= 7"
+            v-if="nodeInfo.type.startsWith('Excel')"
+            v-slot="slotProps"
+            :name="t('dataset.data_preview')"
+            :time="nodeInfo.lastSyncTime"
+            :showTime="nodeInfo.type === 'ExcelRemote'"
+          >
+            <template v-if="slotProps.active">
+              <div class="excel-table">
+                <SheetTabs
+                  :active-tab="activeTab"
+                  @tab-click="handleTabClick"
+                  :tab-list="tabList"
+                ></SheetTabs>
+                <div class="sheet-table-content">
+                  <el-auto-resizer>
+                    <template #default="{ height, width }">
+                      <el-table-v2
+                        :columns="columns"
+                        v-loading="dataPreviewLoading"
+                        header-class="excel-header-cell"
+                        :data="tabData"
+                        :width="width"
+                        :height="height"
+                        fixed
+                        ><template #empty>
+                          <empty-background
+                            :description="t('data_set.no_data')"
+                            img-type="noneWhite"
+                          /> </template
+                      ></el-table-v2>
+                    </template>
+                  </el-auto-resizer>
+                </div>
+              </div>
+            </template>
+          </BaseInfoContent>
+          <BaseInfoContent
+            v-if="
+              (nodeInfo.type.startsWith('API') || nodeInfo.type === 'ExcelRemote') &&
+              nodeInfo.weight >= 7
+            "
             v-slot="slotProps"
             :name="t('dataset.update_setting')"
             :time="(nodeInfo.lastSyncTime as string)"
@@ -1724,41 +1803,6 @@ const getMenuList = (val: boolean) => {
               </template>
               {{ t('dataset.update_records') }}
             </el-button>
-          </BaseInfoContent>
-          <BaseInfoContent
-            v-if="nodeInfo.type === 'Excel'"
-            v-slot="slotProps"
-            :name="t('dataset.data_preview')"
-          >
-            <template v-if="slotProps.active">
-              <div class="excel-table">
-                <SheetTabs
-                  :active-tab="activeTab"
-                  @tab-click="handleTabClick"
-                  :tab-list="tabList"
-                ></SheetTabs>
-                <div class="sheet-table-content">
-                  <el-auto-resizer>
-                    <template #default="{ height, width }">
-                      <el-table-v2
-                        :columns="columns"
-                        v-loading="dataPreviewLoading"
-                        header-class="excel-header-cell"
-                        :data="tabData"
-                        :width="width"
-                        :height="height"
-                        fixed
-                        ><template #empty>
-                          <empty-background
-                            :description="t('data_set.no_data')"
-                            img-type="noneWhite"
-                          /> </template
-                      ></el-table-v2>
-                    </template>
-                  </el-auto-resizer>
-                </div>
-              </div>
-            </template>
           </BaseInfoContent>
         </template>
       </template>

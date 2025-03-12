@@ -238,7 +238,8 @@ const debounceRender = debounce(resetPageInfo => {
     chartObj: myChart,
     pageInfo: state.pageInfo,
     action,
-    resizeAction
+    resizeAction,
+    touchAction
   })
   myChart?.render()
   dvMainStore.setViewInstanceInfo(actualChart.id, myChart)
@@ -366,6 +367,12 @@ const handlePageSizeChange = pageSize => {
 const pointClickTrans = () => {
   if (embeddedCallBack.value === 'yes') {
     trackClick('pointClick')
+  }
+}
+
+const touchAction = callback => {
+  if (!trackMenu.value.length) {
+    callback?.()
   }
 }
 
@@ -664,11 +671,9 @@ onBeforeUnmount(() => {
 const autoStyle = computed(() => {
   if (isISOMobile()) {
     return {
-      position: 'absolute',
-      height: 100 / scale.value + '%!important',
+      height: 20 * scale.value + 8 + 'px',
       width: 100 / scale.value + '%!important',
       left: 50 * (1 - 1 / scale.value) + '%', // 放大余量 除以 2
-      top: 50 * (1 - 1 / scale.value) + '%', // 放大余量 除以 2
       transform: 'scale(' + scale.value + ') translateZ(0)'
     } as CSSProperties
   } else {

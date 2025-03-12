@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import dvBatch from '@/assets/svg/dv-batch.svg'
 import dvDashboard from '@/assets/svg/dv-dashboard.svg'
+import dvHidden from '@/assets/svg/dv-hidden.svg'
 import dvFilter from '@/assets/svg/dv-filter.svg'
 import dvMedia from '@/assets/svg/dv-media.svg'
 import dvMoreCom from '@/assets/svg/dv-more-com.svg'
@@ -64,7 +65,8 @@ const {
   batchOptStatus,
   targetLinkageInfo,
   curBatchOptComponents,
-  appData
+  appData,
+  hiddenListStatus
 } = storeToRefs(dvMainStore)
 const dvModel = 'dashboard'
 const multiplexingRef = ref(null)
@@ -324,6 +326,11 @@ onBeforeUnmount(() => {
 })
 const openDataBoardSetting = () => {
   dvMainStore.setCurComponent({ component: null, index: null })
+  dvMainStore.setHiddenListStatus(false)
+}
+
+const openHiddenList = () => {
+  dvMainStore.setHiddenListStatus()
 }
 
 const openMobileSetting = () => {
@@ -389,6 +396,7 @@ const batchOptStatusChange = value => {
     state.preBatchComponentData = []
     state.preBatchCanvasViewInfo = {}
   }
+  dvMainStore.setHiddenListStatus(false)
   dvMainStore.setBatchOptStatus(value)
 }
 
@@ -620,6 +628,17 @@ const initOpenHandler = newWindow => {
               :tips="t('components.dashboard_configuration')"
               @custom-click="openDataBoardSetting"
               :icon-name="dvDashboard"
+            />
+          </el-tooltip>
+          <el-tooltip
+            effect="dark"
+            :content="t('visualization.hidden_components')"
+            placement="bottom"
+          >
+            <component-button
+              :tips="t('visualization.hidden_components')"
+              @custom-click="openHiddenList"
+              :icon-name="dvHidden"
             />
           </el-tooltip>
           <div class="divider"></div>

@@ -36,6 +36,7 @@ import type { PickOptions } from '@antv/g2plot/lib/core/plot'
 import { defaults } from 'lodash-es'
 import { useI18n } from '@/hooks/web/useI18n'
 const { t: tI18n } = useI18n()
+import { isMobile } from '@/utils/utils'
 
 export function getPadding(chart: Chart): number[] {
   if (chart.drill) {
@@ -133,6 +134,25 @@ export function getTheme(chart: Chart) {
             boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.1)',
             'z-index': 2000,
             position: 'fixed'
+          },
+          'g2-tooltip-list-item': {
+            display: 'flex',
+            'align-items': 'flex-start',
+            'line-height': tooltipFontsize + 'px'
+          },
+          'g2-tooltip-name': {
+            display: 'inline-block',
+            'line-height': tooltipFontsize + 'px',
+            flex: 1
+          },
+          'g2-tooltip-value': {
+            display: 'inline-block',
+            'line-height': tooltipFontsize + 'px'
+          },
+          'g2-tooltip-marker': {
+            'margin-top': (tooltipFontsize - 8) / 2 + 'px',
+            'min-width': '8px',
+            'min-height': '8px'
           }
         }
       },
@@ -402,7 +422,7 @@ export function getXAxis(chart: Chart) {
       const a = JSON.parse(JSON.stringify(customStyle.xAxis))
       if (a.show) {
         const title =
-          a.name && a.name !== ''
+          a.nameShow && a.name && a.name !== ''
             ? {
                 text: a.name,
                 style: {
@@ -428,14 +448,16 @@ export function getXAxis(chart: Chart) {
           ? {
               style: {
                 stroke: axisCfg.lineStyle.color,
-                lineWidth: axisCfg.lineStyle.width
+                lineWidth: axisCfg.lineStyle.width,
+                lineDash: getLineDash(axisCfg.lineStyle.style)
               }
             }
           : null
         const tickLine = axisCfg.show
           ? {
               style: {
-                stroke: axisCfg.lineStyle.color
+                stroke: axisCfg.lineStyle.color,
+                lineWidth: axisCfg.lineStyle.width
               }
             }
           : null
@@ -486,7 +508,7 @@ export function getYAxis(chart: Chart) {
     return false
   }
   const title =
-    yAxis.name && yAxis.name !== ''
+    yAxis.nameShow && yAxis.name && yAxis.name !== ''
       ? {
           text: yAxis.name,
           style: {
@@ -512,14 +534,16 @@ export function getYAxis(chart: Chart) {
     ? {
         style: {
           stroke: axisCfg.lineStyle.color,
-          lineWidth: axisCfg.lineStyle.width
+          lineWidth: axisCfg.lineStyle.width,
+          lineDash: getLineDash(axisCfg.lineStyle.style)
         }
       }
     : null
   const tickLine = axisCfg.show
     ? {
         style: {
-          stroke: axisCfg.lineStyle.color
+          stroke: axisCfg.lineStyle.color,
+          lineWidth: axisCfg.lineStyle.width
         }
       }
     : null
@@ -585,7 +609,7 @@ export function getYAxisExt(chart: Chart) {
     return false
   }
   const title =
-    yAxis.name && yAxis.name !== ''
+    yAxis.nameShow && yAxis.name && yAxis.name !== ''
       ? {
           text: yAxis.name,
           style: {
@@ -611,14 +635,16 @@ export function getYAxisExt(chart: Chart) {
     ? {
         style: {
           stroke: axisCfg.lineStyle.color,
-          lineWidth: axisCfg.lineStyle.width
+          lineWidth: axisCfg.lineStyle.width,
+          lineDash: getLineDash(axisCfg.lineStyle.style)
         }
       }
     : null
   const tickLine = axisCfg.show
     ? {
         style: {
-          stroke: axisCfg.lineStyle.color
+          stroke: axisCfg.lineStyle.color,
+          lineWidth: axisCfg.lineStyle.width
         }
       }
     : null
@@ -876,7 +902,9 @@ export function getLineDash(type) {
  */
 export function setGradientColor(rawColor: string, show = false, angle = 0, start = 0) {
   const item = rawColor.split(',')
-  item.splice(3, 1, '0.3)')
+  const alpha = parseFloat(item[3].replace(')', ''))
+  const startAlpha = alpha * 0.3
+  item.splice(3, 1, `${startAlpha})`)
   let color: string
   if (start == 0) {
     color = `l(${angle}) 0:${item.join(',')} 1:${rawColor}`
@@ -1340,6 +1368,8 @@ export function getTooltipContainer(id) {
   let wrapperDom = document.getElementById(G2_TOOLTIP_WRAPPER)
   if (!wrapperDom) {
     wrapperDom = document.createElement('div')
+    wrapperDom.style.position = 'absolute'
+    wrapperDom.style.zIndex = '9999'
     wrapperDom.id = G2_TOOLTIP_WRAPPER
     document.body.appendChild(wrapperDom)
   }
@@ -1352,7 +1382,7 @@ export function getTooltipContainer(id) {
   g2Tooltip.classList.add('g2-tooltip')
   // 最多半屏，鼠标移入可滚动
   g2Tooltip.style.maxHeight = '50%'
-  g2Tooltip.style.maxWidth = '25%'
+  isMobile() ? (g2Tooltip.style.maxWidth = '50%') : (g2Tooltip.style.maxWidth = '25%')
   g2Tooltip.style.overflowY = 'auto'
   g2Tooltip.style.display = 'none'
   g2Tooltip.style.position = 'fixed'
@@ -1439,13 +1469,21 @@ export function configPlotTooltipEvent<O extends PickOptions, P extends Plot<O>>
       if (!tooltipCtl) {
         return
       }
-      const container = tooltipCtl.tooltip.cfg.container
+      const container = tooltipCtl.tooltip?.cfg.container
       for (const ele of wrapperDom.children) {
-        if (container.id !== ele.id) {
+        if (!container || container.id !== ele.id) {
           ele.style.display = 'none'
         }
       }
     }
+  })
+  plot.on('tooltip:hidden', () => {
+    const tooltipCtl = plot.chart.getController('tooltip')
+    if (!tooltipCtl) {
+      return
+    }
+    const container = tooltipCtl.tooltip?.cfg.container
+    container && (container.style.display = 'none')
   })
 }
 
@@ -1908,4 +1946,64 @@ export const getTooltipItemConditionColor = item => {
     color = item.data['conditionColor'][0]
   }
   return color
+}
+
+/**
+ * 配置空数据样式
+ * @param newChart
+ * @param newData
+ * @param container
+ */
+export const configEmptyDataStyle = (newData, container, newChart?, content?) => {
+  /**
+   * 辅助函数：移除空数据dom
+   */
+  const removeEmptyDom = () => {
+    const emptyElement = document.getElementById(container + '_empty')
+    if (emptyElement) {
+      emptyElement.parentElement.removeChild(emptyElement)
+    }
+  }
+  removeEmptyDom()
+  if (newData.length > 0) return
+  if (!newData.length) {
+    const emptyDom = document.createElement('div')
+    emptyDom.id = container + '_empty'
+    emptyDom.textContent = content || tI18n('data_set.no_data')
+    emptyDom.setAttribute(
+      'style',
+      `position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        color: darkgray;
+        textAlign: center;`
+    )
+    const parent = document.getElementById(container)
+    parent.insertBefore(emptyDom, parent.firstChild)
+    newChart?.destroy()
+  }
+}
+
+export const numberToChineseUnderHundred = (num: number): string => {
+  // 合法性检查
+  if (num <= 0 || num > 99 || !Number.isInteger(num)) {
+    throw new Error('请输入1-99之间的整数')
+  }
+
+  const digits = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九']
+
+  // 处理个位数
+  if (num < 10) return digits[num]
+
+  const tens = Math.floor(num / 10)
+  const ones = num % 10
+
+  // 处理整十
+  if (ones === 0) {
+    return tens === 1 ? '十' : digits[tens] + '十'
+  }
+
+  // 处理其他两位数
+  return tens === 1 ? '十' + digits[ones] : digits[tens] + '十' + digits[ones]
 }

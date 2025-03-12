@@ -203,9 +203,7 @@ onMounted(() => {
             class="preview-download_icon"
             :class="navigateBg === 'light' && 'is-light-setting'"
           >
-            <Icon
-              ><msgNotice style="padding-top: 2px" @click="msgNoticePush" class="svg-icon"
-            /></Icon>
+            <Icon><msgNotice @click="msgNoticePush" class="svg-icon" /></Icon>
           </el-icon>
         </el-badge>
       </el-tooltip>
@@ -238,7 +236,6 @@ onMounted(() => {
   }
 }
 .preview-download_icon {
-  padding: 5px;
   height: 28px;
   width: 28px;
   border-radius: 4px;
@@ -329,9 +326,13 @@ onMounted(() => {
       color: var(--ed-color-black) !important;
     }
     .ed-menu-item:not(.is-disabled):hover,
-    :deep(.ed-sub-menu__title):not(.is-disabled):hover {
+    :deep(.ed-sub-menu):not(.is-active) .ed-sub-menu__title:not(.is-disabled):hover {
       color: #1f2329;
       background: #1f23291a;
+    }
+    :deep(.ed-sub-menu).is-active .ed-sub-menu__title:not(.is-disabled):hover {
+      color: #ffffff !important;
+      background-color: var(--ed-color-primary);
     }
   }
 

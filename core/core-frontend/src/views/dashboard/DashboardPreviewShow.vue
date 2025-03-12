@@ -9,7 +9,6 @@ import EmptyBackground from '@/components/empty-background/src/EmptyBackground.v
 import ArrowSide from '@/views/common/DeResourceArrow.vue'
 import { initCanvasData, initCanvasDataPrepare, onInitReady } from '@/utils/canvasUtils'
 import { useAppStoreWithOut } from '@/store/modules/app'
-import { useRequestStoreWithOut } from '@/store/modules/request'
 import { usePermissionStoreWithOut } from '@/store/modules/permission'
 import { useMoveLine } from '@/hooks/web/useMoveLine'
 import { Icon } from '@/components/icon-custom'
@@ -29,7 +28,6 @@ const dvMainStore = dvMainStoreWithOut()
 const previewCanvasContainer = ref(null)
 const dashboardPreview = ref(null)
 const slideShow = ref(true)
-const requestStore = useRequestStoreWithOut()
 const permissionStore = usePermissionStoreWithOut()
 const appStore = useAppStoreWithOut()
 const dataInitState = ref(true)
@@ -117,13 +115,20 @@ const loadCanvasData = (dvId, weight?) => {
     }
   )
 }
-
+// 地图类图表，需要预先准备图片
+const mapChartTypes = ['bubble-map', 'flow-map', 'heat-map', 'map', 'symbolic-map']
 const downloadH2 = type => {
   downloadStatus.value = true
+  const mapElementIds =
+    state.canvasDataPreview
+      ?.filter(ele => mapChartTypes.includes(ele.innerType))
+      .map(ele => ele.id) || []
+  mapElementIds.forEach(id => useEmitt().emitter.emit('l7-prepare-picture', id))
   nextTick(() => {
     const vueDom = previewCanvasContainer.value.querySelector('.canvas-container')
     downloadCanvas2(type, vueDom, state.dvInfo.name, () => {
       downloadStatus.value = false
+      mapElementIds.forEach(id => useEmitt().emitter.emit('l7-unprepare-picture', id))
     })
   })
 }
@@ -254,7 +259,7 @@ defineExpose({
     <el-container
       class="preview-area"
       :class="{ 'no-data': !hasTreeData }"
-      v-loading="requestStore.loadingMap && requestStore.loadingMap[permissionStore.currentPath]"
+      v-loading="!dataInitState"
     >
       <div
         @click="slideOpenChange"

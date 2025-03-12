@@ -13,7 +13,8 @@ import {
   TotalStatus,
   Aggregation,
   S2DataConfig,
-  MergedCell
+  MergedCell,
+  LayoutResult
 } from '@antv/s2'
 import { formatterItem, valueFormatter } from '../../../formatter'
 import { hexColorToRGBA, isAlphaColor, parseJson } from '../../../util'
@@ -162,7 +163,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
           if (value === null || value === undefined) {
             return value
           }
-          if (![2, 3].includes(f.deType) || !isNumber(value)) {
+          if (![2, 3, 4].includes(f.deType) || !isNumber(value)) {
             return value
           }
           if (f.formatterCfg) {
@@ -190,15 +191,17 @@ export class TablePivot extends S2ChartView<PivotSheet> {
       tableTotal.row.showGrandTotals &&
       v.indexOf(tableTotal.row.totalSortField) > -1
     ) {
-      const sort = {
-        sortFieldId: c[0],
-        sortMethod: tableTotal.row.totalSort.toUpperCase(),
-        sortByMeasure: TOTAL_VALUE,
-        query: {
-          [EXTRA_FIELD]: tableTotal.row.totalSortField
+      c.forEach(i => {
+        const sort = {
+          sortFieldId: i,
+          sortMethod: tableTotal.row.totalSort.toUpperCase(),
+          sortByMeasure: TOTAL_VALUE,
+          query: {
+            [EXTRA_FIELD]: tableTotal.row.totalSortField
+          }
         }
-      }
-      sortParams.push(sort)
+        sortParams.push(sort)
+      })
     }
     if (
       tableTotal.col.totalSort &&
@@ -207,15 +210,17 @@ export class TablePivot extends S2ChartView<PivotSheet> {
       tableTotal.col.showGrandTotals &&
       v.indexOf(tableTotal.col.totalSortField) > -1
     ) {
-      const sort = {
-        sortFieldId: r[0],
-        sortMethod: tableTotal.col.totalSort.toUpperCase(),
-        sortByMeasure: TOTAL_VALUE,
-        query: {
-          [EXTRA_FIELD]: tableTotal.col.totalSortField
+      r.forEach(i => {
+        const sort = {
+          sortFieldId: i,
+          sortMethod: tableTotal.col.totalSort.toUpperCase(),
+          sortByMeasure: TOTAL_VALUE,
+          query: {
+            [EXTRA_FIELD]: tableTotal.col.totalSortField
+          }
         }
-      }
-      sortParams.push(sort)
+        sortParams.push(sort)
+      })
     }
     //列维度为空，行排序按照指标列来排序，取第一个有排序设置的指标
     if (!columnFields?.length) {
@@ -244,9 +249,23 @@ export class TablePivot extends S2ChartView<PivotSheet> {
       col: chart.xAxisExt,
       quota: chart.yAxis
     }
-    //树形模式下，列维度为空，行小计会变成列总计，特殊处理下
-    if (basicStyle.tableLayoutMode === 'tree' && !chart.xAxisExt?.length) {
-      tableTotal.col.calcTotals = tableTotal.row.calcSubTotals
+    // 沒有列维度需要特殊处理
+    if (!chart.xAxisExt?.length) {
+      //树形模式下，列维度为空，行小计的配置会变成列总计
+      if (basicStyle.tableLayoutMode === 'tree') {
+        tableTotal.col.calcTotals = tableTotal.row.calcSubTotals
+        if (!tableTotal.col.calcTotals.cfg?.length) {
+          tableTotal.col.calcTotals.cfg = chart.yAxis.map(y => {
+            return {
+              dataeaseName: y.dataeaseName,
+              aggregation: 'SUM'
+            }
+          })
+        }
+      } else {
+        // 列总计设置为空
+        tableTotal.col.calcTotals.calcFunc = () => '-'
+      }
     }
     totals.forEach(total => {
       if (total.cfg?.length) {
@@ -292,11 +311,149 @@ export class TablePivot extends S2ChartView<PivotSheet> {
     }
     // options
     s2Options.style = this.configStyle(chart, s2DataConfig)
-    s2Options.style.hierarchyCollapse = true
+    // 默认展开层级
+    if (basicStyle.tableLayoutMode === 'tree') {
+      const { defaultExpandLevel } = basicStyle
+      if (isNumber(defaultExpandLevel)) {
+        if (defaultExpandLevel >= chart.xAxis.length) {
+          s2Options.style.rowExpandDepth = defaultExpandLevel
+        } else {
+          s2Options.style.rowExpandDepth = defaultExpandLevel - 2
+        }
+      }
+      if (defaultExpandLevel === 'all') {
+        s2Options.style.rowExpandDepth = chart.xAxis.length
+      }
+      if (!defaultExpandLevel) {
+        s2Options.style.hierarchyCollapse = true
+      }
+    }
     // tooltip
     this.configTooltip(chart, s2Options)
     // 开始渲染
     const s2 = new PivotSheet(containerDom, s2DataConfig, s2Options as unknown as S2Options)
+    // 自适应铺满
+    if (basicStyle.tableColumnMode === 'adapt') {
+      s2.on(S2Event.LAYOUT_RESIZE_COL_WIDTH, () => {
+        s2.store.set('lastLayoutResult', s2.facet.layoutResult)
+      })
+      // 平铺模式行头resize
+      s2.on(S2Event.LAYOUT_RESIZE_ROW_WIDTH, () => {
+        s2.store.set('lastLayoutResult', s2.facet.layoutResult)
+      })
+      // 树形模式行头resize
+      s2.on(S2Event.LAYOUT_RESIZE_TREE_WIDTH, () => {
+        s2.store.set('lastLayoutResult', s2.facet.layoutResult)
+      })
+      s2.on(S2Event.LAYOUT_AFTER_HEADER_LAYOUT, (ev: LayoutResult) => {
+        const lastLayoutResult = s2.store.get('lastLayoutResult') as LayoutResult
+        if (lastLayoutResult) {
+          // 拖动 col 表头 resize
+          const colWidthByFieldValue = s2.options.style?.colCfg?.widthByFieldValue
+          // 平铺模式拖动 row 表头 resize
+          const rowWidthByField = s2.options.style?.rowCfg?.widthByField
+          // 树形模式拖动 row 表头 resize
+          const treeRowWidth =
+            s2.options.style?.treeRowsWidth || lastLayoutResult.rowsHierarchy.width
+          const colWidthMap =
+            lastLayoutResult.colLeafNodes.reduce((p, n) => {
+              p[n.id] = colWidthByFieldValue?.[n.value] ?? n.width
+              return p
+            }, {}) || {}
+          const totalColWidth = ev.colLeafNodes.reduce((p, n) => {
+            n.width = colWidthMap[n.id] || n.width
+            n.x = p
+            return p + n.width
+          }, 0)
+          ev.colNodes.forEach(n => {
+            if (n.isLeaf) {
+              return
+            }
+            n.width = this.getColWidth(n)
+            n.x = this.getLeftChild(n).x
+          })
+          if (basicStyle.tableLayoutMode === 'tree') {
+            ev.rowNodes.forEach(n => {
+              n.width = treeRowWidth
+            })
+            ev.rowsHierarchy.width = treeRowWidth
+            ev.colsHierarchy.width = totalColWidth
+          } else {
+            const rowWidthMap =
+              lastLayoutResult.rowNodes.reduce((p, n) => {
+                p[n.id] = rowWidthByField?.[n.field] ?? n.width
+                return p
+              }, {}) || {}
+            ev.rowNodes.forEach(n => {
+              n.x = 0
+              n.width = rowWidthMap[n.id] || n.width
+              let tmp = n
+              while (tmp.parent.id !== 'root') {
+                n.x += tmp.parent.width
+                tmp = tmp.parent
+              }
+            })
+            const totlaRowWidth = ev.rowsHierarchy.sampleNodesForAllLevels.reduce((p, n) => {
+              return p + n.width
+            }, 0)
+            const maxRowLevel = ev.rowsHierarchy.maxLevel
+            ev.rowNodes.forEach(n => {
+              // 总计和中间层级的小计需要重新计算宽度
+              if (n.isTotalRoot || (n.isSubTotals && n.level < maxRowLevel)) {
+                let width = 0
+                for (let i = n.level; i <= maxRowLevel; i++) {
+                  width += ev.rowsHierarchy.sampleNodesForAllLevels[i].width
+                }
+                n.width = width
+              }
+            })
+            ev.rowsHierarchy.width = totlaRowWidth
+            ev.colsHierarchy.width = totalColWidth
+          }
+          s2.store.set('lastLayoutResult', undefined)
+          return
+        }
+        const containerWidth = containerDom.getBoundingClientRect().width
+        const scale = containerWidth / (ev.colsHierarchy.width + ev.rowsHierarchy.width)
+        if (scale <= 1) {
+          return
+        }
+        const totalRowWidth = Math.round(ev.rowsHierarchy.width * scale)
+        ev.rowNodes.forEach(n => {
+          n.width = Math.round(n.width * scale)
+        })
+        if (basicStyle.tableLayoutMode !== 'tree') {
+          ev.rowNodes.forEach(n => {
+            n.x = 0
+            let tmp = n
+            while (tmp.parent.id !== 'root') {
+              n.x += tmp.parent.width
+              tmp = tmp.parent
+            }
+          })
+        }
+        let totalColWidth = ev.colLeafNodes.reduce((p, n) => {
+          n.width = Math.round(n.width * scale)
+          n.x = p
+          return p + n.width
+        }, 0)
+        ev.colNodes.forEach(n => {
+          if (n.isLeaf) {
+            return
+          }
+          n.width = this.getColWidth(n)
+          n.x = this.getLeftChild(n).x
+        })
+        const totalWidth = totalColWidth + totalRowWidth
+        if (totalWidth > containerWidth) {
+          // 从最后一列减掉
+          ev.colLeafNodes[ev.colLeafNodes.length - 1].width -= totalWidth - containerWidth
+          totalColWidth = totalColWidth - (totalWidth - containerWidth)
+        }
+        ev.colsHierarchy.width = totalColWidth
+        ev.rowsHierarchy.width = totalRowWidth
+      })
+    }
     // tooltip
     const { show } = tooltip
     if (show) {
@@ -312,11 +469,30 @@ export class TablePivot extends S2ChartView<PivotSheet> {
     s2.on(S2Event.COL_CELL_CLICK, ev => this.headerCellClickAction(chart, ev, s2, action))
     // right click
     s2.on(S2Event.GLOBAL_CONTEXT_MENU, event => copyContent(s2, event, meta))
+    // touch
+    this.configTouchEvent(s2, drawOption, meta)
     // theme
     const customTheme = this.configTheme(chart)
     s2.setThemeCfg({ theme: customTheme })
 
     return s2
+  }
+  private getColWidth(node) {
+    let width = 0
+    if (node.children?.length) {
+      node.children.forEach(child => {
+        width += this.getColWidth(child)
+      })
+    } else {
+      width = node.width
+    }
+    return width
+  }
+  private getLeftChild(node) {
+    if (!node.children?.length) {
+      return node
+    }
+    return this.getLeftChild(node.children[0])
   }
   private dataCellClickAction(chart: Chart, ev, s2Instance: PivotSheet, callback) {
     const cell = s2Instance.getCell(ev.target)
@@ -520,7 +696,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
 }
 function customCalcFunc(query, data, status, chart, totalCfgMap, axisMap, customCalc) {
   if (!data?.length || !query[EXTRA_FIELD]) {
-    return 0
+    return '-'
   }
   const aggregation = totalCfgMap[query[EXTRA_FIELD]]?.aggregation || 'SUM'
   switch (aggregation) {
@@ -547,10 +723,13 @@ function customCalcFunc(query, data, status, chart, totalCfgMap, axisMap, custom
       })
       return result?.[query[EXTRA_FIELD]]
     }
+    case 'NONE': {
+      return '-'
+    }
     case 'CUSTOM': {
       const val = getCustomCalcResult(query, axisMap, chart, status, customCalc || {})
-      if (val === '') {
-        return val
+      if (val === '' || val === undefined) {
+        return '-'
       }
       return parseFloat(val)
     }
@@ -645,7 +824,7 @@ function getTreeCustomCalcResult(query, axisMap, status: TotalStatus, customCalc
   if (status.isRowTotal && status.isColSubTotal) {
     const { colSubInRowTotal } = customCalc
     const colLevel = getSubLevel(query, col)
-    const { data } = colSubInRowTotal?.[colLevel]
+    const data = colSubInRowTotal?.[colLevel]?.data
     const colPath = getTreePath(query, col)
     let val
     if (colPath.length && colSubInRowTotal) {
@@ -683,7 +862,7 @@ function getTreeCustomCalcResult(query, axisMap, status: TotalStatus, customCalc
     }
     return val
   }
-  return NaN
+  return '-'
 }
 
 function getGridCustomCalcResult(query, axisMap, status: TotalStatus, customCalc) {
@@ -757,7 +936,7 @@ function getGridCustomCalcResult(query, axisMap, status: TotalStatus, customCalc
   if (status.isRowTotal && status.isColSubTotal) {
     const { colSubInRowTotal } = customCalc
     const colLevel = getSubLevel(query, col)
-    const { data } = colSubInRowTotal?.[colLevel]
+    const data = colSubInRowTotal?.[colLevel]?.data
     const colPath = getTreePath(query, col)
     let val
     if (colPath.length && colSubInRowTotal) {

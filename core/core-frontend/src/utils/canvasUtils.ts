@@ -5,6 +5,7 @@ import componentList, {
   BASE_EVENTS,
   COMMON_COMPONENT_BACKGROUND_DARK,
   COMMON_COMPONENT_BACKGROUND_LIGHT,
+  COMMON_TAB_TITLE_BACKGROUND,
   MULTI_DIMENSIONAL
 } from '@/custom-component/component-list'
 import eventBus from '@/utils/eventBus'
@@ -17,8 +18,7 @@ import {
   findById,
   findCopyResource,
   saveCanvas,
-  updateCanvas,
-  updateCheckVersion
+  updateCanvas
 } from '@/api/visualization/dataVisualization'
 import { storeToRefs } from 'pinia'
 import { getPanelAllLinkageInfo } from '@/api/visualization/linkage'
@@ -64,6 +64,10 @@ export function findNewComponent(componentName, innerType, staticMap?) {
   componentList.forEach(comp => {
     if (comp.component === componentName || comp.component === innerType) {
       newComponent = cloneDeep(comp)
+      if (newComponent.component === 'DeTabs') {
+        newComponent.propValue[0].name = guid()
+        newComponent['titleBackground'] = deepCopy(COMMON_TAB_TITLE_BACKGROUND)
+      }
       newComponent.innerType = innerType
       if (newComponent.innerType === 'richText') {
         newComponent.propValue = {
@@ -117,11 +121,11 @@ function matrixAdaptor(componentItem) {
   componentItem['mSizeX'] = componentItem.mSizeX * 2
   componentItem['mSizeY'] = componentItem.mSizeY * 2
   if (componentItem.component === 'Group') {
-    componentItem.propValue.forEach(groupItem => {
+    componentItem.propValue?.forEach(groupItem => {
       matrixAdaptor(groupItem)
     })
   } else if (componentItem.component === 'DeTabs') {
-    componentItem.propValue.forEach(tabItem => {
+    componentItem.propValue?.forEach(tabItem => {
       tabItem.componentData.forEach(tabComponent => {
         matrixAdaptor(tabComponent)
       })
@@ -141,9 +145,10 @@ export function historyItemAdaptor(
   if (
     componentItem.component === 'VQuery' &&
     attachInfo?.source === 'report' &&
-    !!reportFilterInfo
+    !!reportFilterInfo &&
+    componentItem.propValue?.forEach
   ) {
-    componentItem.propValue.forEach((filterItem, index) => {
+    componentItem.propValue?.forEach((filterItem, index) => {
       if (reportFilterInfo[filterItem.id]) {
         componentItem.propValue[index] = JSON.parse(reportFilterInfo[filterItem.id].filterInfo)
       }
@@ -185,6 +190,7 @@ export function historyItemAdaptor(
   }
 
   // public
+  componentItem['dashboardHidden'] = componentItem['dashboardHidden'] || false
   componentItem['maintainRadio'] = componentItem['maintainRadio'] || false
   componentItem['multiDimensional'] =
     componentItem['multiDimensional'] || deepCopy(MULTI_DIMENSIONAL)
@@ -209,16 +215,18 @@ export function historyItemAdaptor(
   componentItem['category'] = componentItem['category'] || 'base'
 
   if (componentItem.component === 'DeTabs') {
+    componentItem['titleBackground'] =
+      componentItem['titleBackground'] || deepCopy(COMMON_TAB_TITLE_BACKGROUND)
     componentItem.style.fontStyle = componentItem.style.fontStyle || 'normal'
     componentItem.style.fontWeight = componentItem.style.fontWeight || 'normal'
     componentItem.style.textDecoration = componentItem.style.textDecoration || 'none'
-    componentItem.propValue.forEach(tabItem => {
+    componentItem.propValue?.forEach(tabItem => {
       tabItem.componentData.forEach(tabComponent => {
         historyItemAdaptor(tabComponent, reportFilterInfo, attachInfo, canvasVersion, canvasInfo)
       })
     })
   } else if (componentItem.component === 'Group') {
-    componentItem.propValue.forEach(groupItem => {
+    componentItem.propValue?.forEach(groupItem => {
       historyItemAdaptor(groupItem, reportFilterInfo, attachInfo, canvasVersion, canvasInfo)
     })
   }
@@ -472,7 +480,7 @@ export function initCanvasDataMobile(dvId, busiFlag, callBack) {
         ele.events = mEvents || events
         ele.commonBackground = mCommonBackground || commonBackground
         if (ele.component === 'DeTabs') {
-          ele.propValue.forEach(tabItem => {
+          ele.propValue?.forEach(tabItem => {
             tabItem.componentData.forEach(tabComponent => {
               tabComponent.style = tabComponent.mStyle || tabComponent.style
               tabComponent.propValue = tabComponent.mPropValue || tabComponent.propValue
@@ -549,11 +557,11 @@ export async function canvasSave(callBack) {
     if (item.component === 'UserView') {
       item.linkageFilters = []
     } else if (item.component === 'Group') {
-      item.propValue.forEach(groupItem => {
+      item.propValue?.forEach(groupItem => {
         groupItem.linkageFilters = []
       })
     } else if (item.component === 'DeTabs') {
-      item.propValue.forEach(tabItem => {
+      item.propValue?.forEach(tabItem => {
         tabItem.componentData.forEach(tabComponent => {
           tabComponent.linkageFilters = []
         })
@@ -639,7 +647,7 @@ export function isMainCanvas(canvasId) {
 export function checkJoinGroup(item) {
   if (item.component === 'DeTabs') {
     let result = true
-    item.propValue.forEach(tabItem => {
+    item.propValue?.forEach(tabItem => {
       tabItem.componentData.forEach(tabComponent => {
         if (tabComponent.component === 'Group') {
           result = false
@@ -655,7 +663,7 @@ export function checkJoinGroup(item) {
 export function checkJoinTab(item) {
   if (item.component === 'Group') {
     let result = true
-    item.propValue.forEach(groupItem => {
+    item.propValue?.forEach(groupItem => {
       if (groupItem.component === 'DeTabs') {
         result = false
       }
@@ -706,13 +714,13 @@ export function itemCanvasPathCheck(item, checkType) {
 export function canvasIdMapCheck(item, pItem, pathMap) {
   pathMap[item.id] = pItem
   if (item.component === 'DeTabs') {
-    item.propValue.forEach(tabItem => {
+    item.propValue?.forEach(tabItem => {
       tabItem.componentData.forEach(tabComponent => {
         canvasIdMapCheck(tabComponent, item, pathMap)
       })
     })
   } else if (item.component === 'Group') {
-    item.propValue.forEach(groupItem => {
+    item.propValue?.forEach(groupItem => {
       canvasIdMapCheck(groupItem, item, pathMap)
     })
   }
@@ -732,6 +740,21 @@ export function isGroupCanvas(canvasId) {
 
 export function isTabCanvas(canvasId) {
   return canvasId && !canvasId.includes('Group') && !isMainCanvas(canvasId)
+}
+
+export function findComponentIndexByIdWithFilterHidden(
+  componentId,
+  componentDataMatch = componentData.value
+) {
+  let indexResult = -1
+  componentDataMatch
+    .filter(item => !item.dashboardHidden)
+    .forEach((component, index) => {
+      if (component.id === componentId) {
+        indexResult = index
+      }
+    })
+  return indexResult
 }
 
 export function findComponentIndexById(componentId, componentDataMatch = componentData.value) {
@@ -769,11 +792,11 @@ export function findAllViewsId(componentData, idArray) {
     if (item.component === 'UserView' && item.innerType != 'VQuery') {
       idArray.push(item.id)
     } else if (item.component === 'Group') {
-      item.propValue.forEach(groupItem => {
+      item.propValue?.forEach(groupItem => {
         idArray.push(groupItem.id)
       })
     } else if (item.component === 'DeTabs') {
-      item.propValue.forEach(tabItem => {
+      item.propValue?.forEach(tabItem => {
         tabItem.componentData.forEach(tabComponent => {
           idArray.push(tabComponent.id)
         })
@@ -913,7 +936,7 @@ export function componentPreSort(componentData) {
     componentData.sort((c1, c2) => c1.y - c2.y)
     componentData.forEach(componentItem => {
       if (componentItem.component === 'DeTabs') {
-        componentItem.propValue.forEach(tabItem => {
+        componentItem.propValue?.forEach(tabItem => {
           componentPreSort(tabItem.componentData)
         })
       }
@@ -942,13 +965,13 @@ export function findComponentById(componentId) {
     if (item.id === componentId) {
       result = item
     } else if (item.component === 'Group') {
-      item.propValue.forEach(groupItem => {
+      item.propValue?.forEach(groupItem => {
         if (groupItem.id === componentId) {
           result = groupItem
         }
       })
     } else if (item.component === 'DeTabs') {
-      item.propValue.forEach(tabItem => {
+      item.propValue?.forEach(tabItem => {
         tabItem.componentData.forEach(tabComponent => {
           if (tabComponent.id === componentId) {
             result = tabComponent

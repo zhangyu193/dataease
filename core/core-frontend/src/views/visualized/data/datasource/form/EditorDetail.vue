@@ -24,7 +24,7 @@ import { CustomPassword } from '@/components/custom-password'
 import { ElForm, ElMessage, ElMessageBox } from 'element-plus-secondary'
 import Cron from '@/components/cron/src/Cron.vue'
 import { ComponentPublicInstance } from 'vue'
-import { XpackComponent } from '@/components/plugin'
+import { PluginComponent, XpackComponent } from '@/components/plugin'
 import { iconFieldMap } from '@/components/icon-group/field-list'
 import { boolean } from 'mathjs'
 const { t } = useI18n()
@@ -52,7 +52,6 @@ const prop = defineProps({
     },
     type: Object
   },
-
   activeStep: {
     required: false,
     default: 1,
@@ -61,10 +60,22 @@ const prop = defineProps({
   isSupportSetKey: {
     type: boolean,
     required: true
+  },
+  pluginDs: {
+    type: [],
+    required: true
+  },
+  pluginIndex: {
+    type: String,
+    required: true
+  },
+  isPlugin: {
+    type: boolean,
+    required: true
   }
 })
 
-const { form, activeStep, isSupportSetKey } = toRefs(prop)
+const { form, activeStep, isSupportSetKey, pluginDs, pluginIndex, isPlugin } = toRefs(prop)
 
 const state = reactive({
   itemRef: []
@@ -95,6 +106,8 @@ const defaultRule = {
 const rule = ref<FormRules>(cloneDeep(defaultRule))
 const api_table_title = ref('')
 const editApiItem = ref()
+const xpack = ref()
+const visible = ref(false)
 const defaultApiItem = {
   name: '',
   deTableName: '',
@@ -126,8 +139,11 @@ const defaultApiItem = {
   jsonPath: ''
 }
 
-const initForm = type => {
-  if (type !== 'API') {
+const initForm = (type, pluginDsList, indexPlugin, isPluginDs) => {
+  pluginDs.value = pluginDsList
+  pluginIndex.value = indexPlugin
+  isPlugin.value = isPluginDs
+  if (!type.startsWith('API')) {
     form.value.configuration = {
       dataBase: '',
       jdbcUrl: '',
@@ -148,7 +164,7 @@ const initForm = type => {
     rule.value = cloneDeep(defaultRule)
     setRules()
   }
-  if (type === 'API') {
+  if (type.startsWith('API')) {
     form.value.syncSetting = {
       updateType: 'all_scope',
       syncRate: 'SIMPLE_CRON',
@@ -163,14 +179,10 @@ const initForm = type => {
   if (type === 'oracle') {
     form.value.configuration.connectionType = 'sid'
   }
-
   form.value.type = type
-  setTimeout(() => {
-    dsForm?.value?.clearValidate()
-  }, 0)
 }
 
-const notapiexcelconfig = computed(() => form.value.type !== 'API')
+const notapiexcelconfig = computed(() => form.value && !form.value.type.startsWith('API'))
 
 const authMethodList = [
   {
@@ -353,7 +365,7 @@ const setRules = () => {
 watch(
   () => form.value.type,
   val => {
-    if (val !== 'API') {
+    if (!val.startsWith('API')) {
       rule.value = cloneDeep(defaultRule)
       setRules()
     }
@@ -426,8 +438,40 @@ const addApiItem = item => {
       form.value,
       activeName.value,
       editItem,
-      isSupportSetKey.value
+      isSupportSetKey.value,
+      pluginDs.value,
+      pluginIndex.value,
+      isPlugin.value
     )
+  })
+}
+
+const addLarkItem = item => {
+  let apiItem = null
+  let editItem = false
+  api_table_title.value = t('datasource.data_table')
+  if (item) {
+    apiItem = cloneDeep(item)
+    editItem = true
+  } else {
+    apiItem = cloneDeep(defaultApiItem)
+    apiItem.type = activeName.value
+    let serialNumber1 =
+      form.value.apiConfiguration.length > 0
+        ? form.value.apiConfiguration[form.value.apiConfiguration.length - 1].serialNumber + 1
+        : 0
+    let serialNumber2 =
+      form.value.paramsConfiguration && form.value.paramsConfiguration.length > 0
+        ? form.value.paramsConfiguration[form.value.paramsConfiguration.length - 1].serialNumber + 1
+        : 0
+    apiItem.serialNumber = serialNumber1 + serialNumber2
+  }
+  visible.value = true
+  nextTick(() => {
+    xpack?.value?.invokeMethod({
+      methodName: 'initApiItem',
+      args: [apiItem, form.value, activeName.value, editItem, isSupportSetKey.value]
+    })
   })
 }
 
@@ -445,6 +489,11 @@ const cancelItem = (index: number) => {
 const submitForm = () => {
   dsForm.value.clearValidate()
   return dsForm.value.validate
+}
+
+const submitApiForm = () => {
+  dsApiForm.value.clearValidate()
+  return dsApiForm.value.validate
 }
 
 const clearForm = () => {
@@ -550,7 +599,10 @@ const getDsSchema = () => {
       loading.value = true
       getSchema(request)
         .then(res => {
-          schemas.value = res.data
+          schemas.value = (res.data || []).map(ele => ({
+            value: ele,
+            label: ele
+          }))
           ElMessage.success(t('commons.success'))
         })
         .finally(() => {
@@ -597,13 +649,14 @@ const apiRule = {
   'syncSetting.startTime': [
     {
       required: true,
-      message: t('datasource.start_time'),
+      message: t('sync_task.please_choose_start_time'),
       trigger: 'change'
     }
   ]
 }
 const dialogEditParams = ref(false)
 const dialogRenameApi = ref(false)
+const dialogAddLarkItem = ref(false)
 const activeParamsName = ref('')
 const activeParamsID = ref(0)
 const paramsObj = ref({
@@ -724,6 +777,17 @@ const editParams = data => {
   dialogEditParams.value = true
 }
 
+const getPluginStatic = () => {
+  const arr = pluginDs.value.filter(ele => {
+    return ele.type === form.value.type
+  })
+  return pluginIndex.value
+    ? pluginIndex.value
+    : arr && arr.length > 0
+    ? arr[0].staticMap?.index
+    : null
+}
+
 const delParams = data => {
   ElMessageBox.confirm(t('data_source.sure_to_delete'), {
     confirmButtonType: 'danger',
@@ -748,6 +812,7 @@ const datasetTypeList = [
 ]
 defineExpose({
   submitForm,
+  submitApiForm,
   resetForm,
   initForm,
   clearForm
@@ -757,7 +822,7 @@ defineExpose({
 <template>
   <div class="editor-detail">
     <div class="detail-inner create-dialog">
-      <div v-show="form.type === 'API'" class="info-update">
+      <div v-show="form.type.startsWith('API')" class="info-update">
         <div :class="activeStep === 1 && 'active'" class="info-text">
           {{ t('data_source.source_configuration_information') }}
         </div>
@@ -766,7 +831,10 @@ defineExpose({
           {{ t('data_source.data_update_settings') }}
         </div>
       </div>
-      <div class="title-form_primary base-info" v-show="activeStep !== 2 && form.type === 'API'">
+      <div
+        class="title-form_primary base-info"
+        v-show="activeStep !== 2 && form.type.startsWith('API')"
+      >
         {{ t('datasource.basic_info') }}
       </div>
       <el-form
@@ -780,7 +848,7 @@ defineExpose({
         v-loading="loading"
       >
         <el-form-item
-          :label="t('auth.datasource') + ' ' + t('chart.name')"
+          :label="t('data_source.data_source_name')"
           prop="name"
           v-show="activeStep !== 2"
         >
@@ -801,11 +869,12 @@ defineExpose({
             show-word-limit
           />
         </el-form-item>
-        <template v-if="form.type === 'API'">
+        <template v-if="form.type.startsWith('API')">
           <div class="title-form_primary flex-space table-info-mr" v-show="activeStep !== 2">
             <el-tabs v-model="activeName" class="api-tabs">
               <el-tab-pane :label="t('datasource.data_table')" name="table"></el-tab-pane>
               <el-tab-pane
+                v-if="form.type === 'API'"
                 :label="t('data_source.interface_parameters')"
                 name="params"
               ></el-tab-pane>
@@ -823,7 +892,9 @@ defineExpose({
             :description="t('datasource.no_data_table')"
             img-type="noneWhite"
           />
-          <template v-if="form.type === 'API' && activeStep === 1 && activeName === 'table'">
+          <template
+            v-if="form.type.startsWith('API') && activeStep === 1 && activeName === 'table'"
+          >
             <div class="api-card-content">
               <div
                 v-for="(api, idx) in form.apiConfiguration"
@@ -1127,16 +1198,15 @@ defineExpose({
                 {{ t('datasource.get_schema') }}
               </el-button>
             </template>
-            <el-select
+            <el-select-v2
               v-model="form.configuration.schema"
+              :options="schemas"
               filterable
               :placeholder="t('common.please_select')"
               class="de-select"
               @change="validatorSchema"
               @blur="validatorSchema"
-            >
-              <el-option v-for="item in schemas" :key="item" :label="item" :value="item" />
-            </el-select>
+            />
           </el-form-item>
           <el-form-item
             :label="t('datasource.extra_params')"
@@ -1344,7 +1414,7 @@ defineExpose({
         <el-form-item
           :label="t('datasource.update_type')"
           prop="syncSetting.updateType"
-          v-if="activeStep === 2 && form.type === 'API'"
+          v-if="activeStep === 2 && form.type.startsWith('API')"
         >
           <el-radio-group v-model="form.syncSetting.updateType">
             <el-radio label="all_scope">{{ t('datasource.all_scope') }}</el-radio>
@@ -1354,7 +1424,7 @@ defineExpose({
         <el-form-item
           :label="t('datasource.sync_rate')"
           prop="syncSetting.syncRate"
-          v-if="activeStep === 2 && form.type === 'API'"
+          v-if="activeStep === 2 && form.type.startsWith('API')"
         >
           <el-radio-group v-model="form.syncSetting.syncRate" @change="onRateChange">
             <el-radio label="RIGHTNOW">{{ t('data_source.update_now') }}</el-radio>
@@ -1363,7 +1433,11 @@ defineExpose({
           </el-radio-group>
         </el-form-item>
         <div
-          v-if="activeStep === 2 && form.type === 'API' && form.syncSetting.syncRate !== 'RIGHTNOW'"
+          v-if="
+            activeStep === 2 &&
+            form.type.startsWith('API') &&
+            form.syncSetting.syncRate !== 'RIGHTNOW'
+          "
           class="execute-rate-cont"
         >
           <el-form-item
@@ -1394,7 +1468,7 @@ defineExpose({
           <el-form-item v-if="form.syncSetting.syncRate === 'CRON'" prop="syncSetting.cron">
             <el-popover :width="834" v-model="cronEdit" trigger="click">
               <template #default>
-                <div style="width: 814px; height: 400px; overflow-y: auto">
+                <div style="width: 814px; height: 450px; overflow-y: auto">
                   <cron
                     v-if="showCron"
                     v-model="form.syncSetting.cron"
@@ -1496,7 +1570,6 @@ defineExpose({
           <el-button type="primary" @click="saveApiObj">{{ t('dataset.confirm') }} </el-button>
         </template>
       </el-dialog>
-
       <api-http-request-draw @return-item="returnItem" ref="editApiItem"></api-http-request-draw>
     </div>
   </div>

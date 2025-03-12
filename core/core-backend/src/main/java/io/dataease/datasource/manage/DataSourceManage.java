@@ -20,7 +20,10 @@ import io.dataease.license.utils.LicenseUtil;
 import io.dataease.model.BusiNodeRequest;
 import io.dataease.model.BusiNodeVO;
 import io.dataease.operation.manage.CoreOptRecentManage;
-import io.dataease.utils.*;
+import io.dataease.utils.AuthUtils;
+import io.dataease.utils.BeanUtils;
+import io.dataease.utils.CommunityUtils;
+import io.dataease.utils.TreeUtils;
 import jakarta.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -34,7 +37,6 @@ import java.util.Stack;
 @Component
 public class DataSourceManage {
 
-
     @Resource
     private DataSourceExtMapper dataSourceExtMapper;
 
@@ -46,6 +48,9 @@ public class DataSourceManage {
 
     @Resource
     private CoreDatasourceExtMapper coreDatasourceExtMapper;
+
+    @Resource
+    private EngineManage engineManage;
 
     private DatasourceNodeBO rootNode() {
         return new DatasourceNodeBO(0L, "root", false, 7, -1L, 0, "mysql");
@@ -94,7 +99,7 @@ public class DataSourceManage {
     }
 
     public void checkName(DatasourceDTO dto) {
-        if(StringUtils.isEmpty(dto.getName()) || StringUtils.isEmpty(dto.getName().trim())){
+        if (StringUtils.isEmpty(dto.getName()) || StringUtils.isEmpty(dto.getName().trim())) {
             DEException.throwException(Translator.get("i18n_df_name_can_not_empty"));
         }
         QueryWrapper<CoreDatasource> wrapper = new QueryWrapper<>();
@@ -125,6 +130,11 @@ public class DataSourceManage {
         }
     }
 
+    @XpackInteract(value = "larkManage", replace = true)
+    public String getTenantAccessToken() {
+        return null;
+    }
+
 
     @XpackInteract(value = "datasourceResourceTree", before = false)
     public void innerEdit(CoreDatasource coreDatasource) {
@@ -137,6 +147,17 @@ public class DataSourceManage {
         coreOptRecentManage.saveOpt(coreDatasource.getId(), OptConstants.OPT_RESOURCE_TYPE.DATASOURCE, OptConstants.OPT_TYPE.UPDATE);
     }
 
+
+    @XpackInteract(value = "datasourceResourceTree", before = false)
+    public void innerEditName(CoreDatasource coreDatasource) {
+        UpdateWrapper<CoreDatasource> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("id", coreDatasource.getId());
+        coreDatasource.setTaskStatus(TaskStatus.WaitingForExecution.name());
+        coreDatasource.setUpdateTime(System.currentTimeMillis());
+        coreDatasource.setUpdateBy(AuthUtils.getUser().getUserId());
+        coreDatasourceMapper.update(coreDatasource, updateWrapper);
+        coreOptRecentManage.saveOpt(coreDatasource.getId(), OptConstants.OPT_RESOURCE_TYPE.DATASOURCE, OptConstants.OPT_TYPE.UPDATE);
+    }
 
     @XpackInteract(value = "datasourceResourceTree", before = false)
     public void innerEditStatus(CoreDatasource coreDatasource) {
@@ -176,6 +197,9 @@ public class DataSourceManage {
 
     @XpackInteract(value = "datasourceResourceTree", before = false)
     public CoreDatasource getCoreDatasource(Long id) {
+        if (id == -1L) {
+            return engineManage.getDeEngine();
+        }
         return coreDatasourceMapper.selectById(id);
     }
 

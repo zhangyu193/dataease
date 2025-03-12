@@ -30,8 +30,8 @@ import io.dataease.dataset.manage.DatasetDataManage;
 import io.dataease.dataset.manage.DatasetGroupManage;
 import io.dataease.datasource.dao.auto.entity.CoreDatasource;
 import io.dataease.datasource.dao.auto.mapper.CoreDatasourceMapper;
-import io.dataease.datasource.provider.ApiUtils;
 import io.dataease.datasource.provider.ExcelUtils;
+import io.dataease.datasource.server.DatasourceServer;
 import io.dataease.exception.DEException;
 import io.dataease.extensions.datasource.vo.DatasourceConfiguration;
 import io.dataease.extensions.view.dto.ChartViewDTO;
@@ -141,6 +141,8 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
     @Resource
     private CoreUserManage coreUserManage;
+    @Resource
+    private DatasourceServer datasourceServer;
 
     @Override
     public DataVisualizationVO findCopyResource(Long dvId, String busiFlag) {
@@ -160,12 +162,12 @@ public class DataVisualizationServer implements DataVisualizationApi {
         Long dvId = request.getId();
         String busiFlag = request.getBusiFlag();
         DataVisualizationVO result = extDataVisualizationMapper.findDvInfo(dvId, busiFlag);
-        // get creator
-        String userName = coreUserManage.getUserName(Long.valueOf(result.getCreateBy()));
-        if (StringUtils.isNotBlank(userName)) {
-            result.setCreatorName(userName);
-        }
         if (result != null) {
+            // get creator
+            String userName = coreUserManage.getUserName(Long.valueOf(result.getCreateBy()));
+            if (StringUtils.isNotBlank(userName)) {
+                result.setCreatorName(userName);
+            }
             //获取图表信息
             List<ChartViewDTO> chartViewDTOS = chartViewManege.listBySceneId(dvId);
             if (!CollectionUtils.isEmpty(chartViewDTOS)) {
@@ -231,9 +233,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
                     // Excel 数据表明映射
                     if (StringUtils.isNotEmpty(datasourceOld.getConfiguration())) {
                         if (datasourceOld.getType().equals(DatasourceConfiguration.DatasourceType.Excel.name())) {
-                            dsTableNamesMap.put(datasourceOld.getId(), ExcelUtils.getTableNamesMap(datasourceOld.getConfiguration()));
-                        } else if (datasourceOld.getType().equals(DatasourceConfiguration.DatasourceType.API.name())) {
-                            dsTableNamesMap.put(datasourceOld.getId(), ApiUtils.getTableNamesMap(datasourceOld.getConfiguration()));
+                            dsTableNamesMap.put(datasourceOld.getId(), ExcelUtils.getTableNamesMap(datasourceOld.getType(), datasourceOld.getConfiguration()));
+                        } else if (datasourceOld.getType().contains(DatasourceConfiguration.DatasourceType.API.name())) {
+                            dsTableNamesMap.put(datasourceOld.getId(), (Map<String, String>) datasourceServer.invokeMethod(datasourceOld.getType(), "getTableNamesMap", String.class, datasourceOld.getConfiguration()));
                         }
                     }
                 });
@@ -243,9 +245,9 @@ public class DataVisualizationServer implements DataVisualizationApi {
                     // Excel 数据表明映射
                     if (StringUtils.isNotEmpty(datasourceNew.getConfiguration())) {
                         if (datasourceNew.getType().equals(DatasourceConfiguration.DatasourceType.Excel.name())) {
-                            dsTableNamesMap.put(datasourceNew.getId(), ExcelUtils.getTableNamesMap(datasourceNew.getConfiguration()));
-                        } else if (datasourceNew.getType().equals(DatasourceConfiguration.DatasourceType.API.name())) {
-                            dsTableNamesMap.put(datasourceNew.getId(), ApiUtils.getTableNamesMap(datasourceNew.getConfiguration()));
+                            dsTableNamesMap.put(datasourceNew.getId(), ExcelUtils.getTableNamesMap(datasourceNew.getType(), datasourceNew.getConfiguration()));
+                        } else if (datasourceNew.getType().contains(DatasourceConfiguration.DatasourceType.API.name())) {
+                            dsTableNamesMap.put(datasourceNew.getId(), (Map<String, String>) datasourceServer.invokeMethod(datasourceNew.getType(), "getTableNamesMap", String.class, datasourceNew.getConfiguration()));
                         }
                     }
                 });
@@ -332,10 +334,12 @@ public class DataVisualizationServer implements DataVisualizationApi {
                         //表名映射更新
                         Map<String, String> appDsTableNamesMap = dsTableNamesMap.get(key);
                         Map<String, String> systemDsTableNamesMap = dsTableNamesMap.get(value);
-                        if (!CollectionUtils.isEmpty(appDsTableNamesMap) && !CollectionUtils.isEmpty(systemDsTableNamesMap)) {
+                        if (!CollectionUtils.isEmpty(appDsTableNamesMap)) {
                             appDsTableNamesMap.forEach((keyName, valueName) -> {
-                                if (StringUtils.isNotEmpty(systemDsTableNamesMap.get(keyName))) {
+                                if (!CollectionUtils.isEmpty(systemDsTableNamesMap) && StringUtils.isNotEmpty(systemDsTableNamesMap.get(keyName))) {
                                     dsGroup.setInfo(dsGroup.getInfo().replaceAll(valueName, systemDsTableNamesMap.get(keyName)));
+                                }else{
+                                    dsGroup.setInfo(dsGroup.getInfo().replaceAll(valueName, "excel_can_not_find"));
                                 }
                             });
                         }
@@ -516,11 +520,11 @@ public class DataVisualizationServer implements DataVisualizationApi {
         coreVisualizationManage.delete(dvId);
     }
 
-    private void resourceTreeTypeAdaptor(List<BusiNodeVO> tree,String type){
-        if(!CollectionUtils.isEmpty(tree)){
+    private void resourceTreeTypeAdaptor(List<BusiNodeVO> tree, String type) {
+        if (!CollectionUtils.isEmpty(tree)) {
             tree.forEach(busiNodeVO -> {
                 busiNodeVO.setType(type);
-                resourceTreeTypeAdaptor(busiNodeVO.getChildren(),type);
+                resourceTreeTypeAdaptor(busiNodeVO.getChildren(), type);
             });
         }
     }
@@ -537,7 +541,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
             List<BusiNodeVO> dataVResult = coreVisualizationManage.tree(requestDv);
             List<BusiNodeVO> result = new ArrayList<>();
             if (!CollectionUtils.isEmpty(dashboardResult)) {
-                resourceTreeTypeAdaptor(dashboardResult,"dashboard");
+                resourceTreeTypeAdaptor(dashboardResult, "dashboard");
                 BusiNodeVO dashboardResultParent = new BusiNodeVO();
                 dashboardResultParent.setName(Translator.get("i18n_menu.panel"));
                 dashboardResultParent.setId(-101L);
@@ -549,7 +553,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 result.add(dashboardResultParent);
             }
             if (!CollectionUtils.isEmpty(dataVResult)) {
-                resourceTreeTypeAdaptor(dataVResult,"dataV");
+                resourceTreeTypeAdaptor(dataVResult, "dataV");
                 BusiNodeVO dataVResultParent = new BusiNodeVO();
                 dataVResultParent.setName(Translator.get("i18n_menu.screen"));
                 dataVResultParent.setId(-102L);

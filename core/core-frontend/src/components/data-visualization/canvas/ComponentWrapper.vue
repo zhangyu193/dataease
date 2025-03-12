@@ -13,6 +13,9 @@ import { dvMainStoreWithOut } from '@/store/modules/data-visualization/dvMain'
 import { activeWatermarkCheckUser, removeActiveWatermark } from '@/components/watermark/watermark'
 import { isMobile } from '@/utils/utils'
 import { isDashboard } from '@/utils/canvasUtils'
+import { XpackComponent } from '@/components/plugin'
+import { useAppStoreWithOut } from '@/store/modules/app'
+const appStore = useAppStoreWithOut()
 
 const componentWrapperInnerRef = ref(null)
 const componentEditBarRef = ref(null)
@@ -168,18 +171,14 @@ const handleInnerMouseDown = e => {
 onMounted(() => {
   currentInstance = getCurrentInstance()
   const methodName = 'componentImageDownload-' + config.value.id
-  useEmitt().emitter.off(methodName)
-  useEmitt({
-    name: methodName,
-    callback: () => {
+  if (!useEmitt().emitter.all.get(methodName)?.length) {
+    useEmitt().emitter.on(methodName, () => {
       htmlToImage()
-    }
-  })
+    })
+  }
 })
 
 const onClick = e => {
-  e.preventDefault()
-  e.stopPropagation()
   // 将当前点击组件的事件传播出去
   eventBus.emit('componentClick')
   dvMainStore.setInEditorStatus(true)
@@ -318,17 +317,23 @@ const onWrapperClick = e => {
       const url = config.value.events.jump.value
       const jumpType = config.value.events.jump.type
       try {
-        let newWindow
         if ('newPop' === jumpType) {
           window.open(
             url,
             '_blank',
             'width=800,height=600,left=200,top=100,toolbar=no,scrollbars=yes,resizable=yes,location=no'
           )
+        } else if ('_blank' === jumpType) {
+          console.info('DataEase Component Jump _blank value:' + window['originOpen'])
+          if (window['originOpen']) {
+            console.info('DataEase Component originOpen _blank')
+            window['originOpen'](url, '_blank')
+          } else {
+            window.open(url, '_blank')
+          }
         } else {
-          newWindow = window.open(url, jumpType)
+          initOpenHandler(window.open(url, jumpType))
         }
-        initOpenHandler(newWindow)
       } catch (e) {
         console.warn('url 格式错误:' + url)
       }
@@ -433,6 +438,10 @@ const showActive = computed(() => props.popActive || (dvMainStore.mobileInPc && 
         :name="commonBackgroundSvgInner"
       ></Board>
     </div>
+    <XpackComponent
+      ref="openHandler"
+      jsname="L2NvbXBvbmVudC9lbWJlZGRlZC1pZnJhbWUvT3BlbkhhbmRsZXI="
+    />
   </div>
 </template>
 

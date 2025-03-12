@@ -602,7 +602,8 @@ export function getConditions(chart: Chart) {
   const dimFields = [...chart.xAxis, ...chart.xAxisExt].map(i => i.dataeaseName)
   if (conditions?.length > 0) {
     const { tableCell, basicStyle, tableHeader } = parseJson(chart.customAttr)
-    const enableTableCrossBG = tableCell.enableTableCrossBG
+    // 合并单元格时斑马纹失效
+    const enableTableCrossBG = chart.type === 'table-info' ? tableCell.enableTableCrossBG && !tableCell.mergeCells : tableCell.enableTableCrossBG
     const valueColor = isAlphaColor(tableCell.tableFontColor)
       ? tableCell.tableFontColor
       : hexColorToRGBA(tableCell.tableFontColor, basicStyle.alpha)
@@ -981,6 +982,10 @@ export function configHeaderInteraction(chart: Chart, option: S2Options) {
         if (meta.field === SERIES_NUMBER_FIELD) {
           return false
         }
+        // 分组
+        if (meta.colIndex === -1) {
+          return false
+        }
         const sortMethodMap = meta.spreadsheet.store.get('sortMethodMap')
         const sortType = sortMethodMap?.[meta.field]
         if (sortType) {
@@ -1051,6 +1056,14 @@ export function copyContent(s2Instance: SpreadSheet, event, fieldMeta) {
     if (!cells?.length) {
       return
     }
+    if (cells.length === 1) {
+      const curCell = cells[0]
+      if (cell.getMeta().id === curCell.id) {
+        copyString(cellMeta.value + '', true)
+      }
+      s2Instance.interaction.clearState()
+      return
+    }
     const brushSelection = s2Instance.interaction.interactions.get(
       InteractionName.BRUSH_SELECTION
     ) as DataCellBrushSelection
@@ -1086,7 +1099,7 @@ export function copyContent(s2Instance: SpreadSheet, event, fieldMeta) {
         arr.forEach((cell, index) => {
           const cellMeta = cell.getMeta()
           const value = cellMeta.data?.[cellMeta.valueField]
-          const metaObj = find(fieldMeta, m => m.field === valueField)
+          const metaObj = find(fieldMeta, m => m.field === cellMeta.valueField)
           let fieldVal = value?.toString()
           if (metaObj) {
             fieldVal = metaObj.formatter(value)
@@ -1168,11 +1181,17 @@ function getTooltipPosition(event) {
 }
 
 export async function exportGridPivot(instance: PivotSheet, chart: ChartObj) {
+  const { layoutResult } = instance.facet
   const { meta, fields } = instance.dataCfg
   const rowLength = fields?.rows?.length || 0
   const colLength = fields?.columns?.length || 0
+  const colNums = layoutResult.colLeafNodes.length + rowLength + 1
+  if (colNums > 16384) {
+    ElMessage.warning(i18nt('chart.pivot_export_invalid_col_exceed'))
+    return
+  }
   const workbook = new Exceljs.Workbook()
-  const worksheet = workbook.addWorksheet(chart.title)
+  const worksheet = workbook.addWorksheet(i18nt('chart.chart_data'))
   const metaMap: Record<string, Meta> = meta?.reduce((p, n) => {
     if (n.field) {
       p[n.field] = n
@@ -1202,7 +1221,6 @@ export async function exportGridPivot(instance: PivotSheet, chart: ChartObj) {
       cell.border.right = { style: 'thick', color: { argb: '00000000' } }
     }
   })
-  const { layoutResult } = instance.facet
   // 行头
   const { rowLeafNodes, rowsHierarchy, rowNodes } = layoutResult
   const maxColIndex = rowsHierarchy.maxLevel + 1
@@ -1338,18 +1356,21 @@ export async function exportGridPivot(instance: PivotSheet, chart: ChartObj) {
 }
 
 export async function exportTreePivot(instance: PivotSheet, chart: ChartObj) {
+  const layoutResult = instance.facet.layoutResult
+  if (layoutResult.colLeafNodes.length + 2 > 16384) {
+    ElMessage.warning(i18nt('chart.pivot_export_invalid_col_exceed'))
+    return
+  }
   const { meta, fields } = instance.dataCfg
   const colLength = fields?.columns?.length || 0
   const workbook = new Exceljs.Workbook()
-  const worksheet = workbook.addWorksheet(chart.title)
-
+  const worksheet = workbook.addWorksheet(i18nt('chart.chart_data'))
   const metaMap: Record<string, Meta> = meta?.reduce((p, n) => {
     if (n.field) {
       p[n.field] = n
     }
     return p
   }, {})
-  const layoutResult = instance.facet.layoutResult
 
   // 角头
   fields.columns?.forEach((column, index) => {
@@ -1460,7 +1481,7 @@ export async function exportPivotExcel(instance: PivotSheet, chart: ChartObj) {
   const rowLength = fields?.rows?.length || 0
   const valueLength = fields?.values?.length || 0
   if (!(rowLength && valueLength)) {
-    ElMessage.warning('行维度或指标维度为空不可导出！')
+    ElMessage.warning(i18nt('chart.pivot_export_invalid_field'))
     return
   }
   if (chart.customAttr.basicStyle.tableLayoutMode !== 'tree') {
@@ -1482,7 +1503,7 @@ export function configMergeCells(chart: Chart, options: S2Options, dataConfig: S
         p[n.dataeaseName] = n
         return p
       }, {}) || {}
-    const quotaIndex = dataConfig.meta.findIndex(m => fieldsMap[m.field].groupType === 'q')
+    const quotaIndex = dataConfig.meta.findIndex(m => fieldsMap[m.field]?.groupType === 'q')
     const data = chart.data?.tableRow
     if (quotaIndex === 0 || !data?.length) {
       return
@@ -1961,4 +1982,36 @@ export const configEmptyDataStyle = (newChart, basicStyle, newData, container) =
       parent.insertBefore(emptyDom, parent.firstChild)
     }
   })
+}
+
+export const getLeafNodes = (tree: Array<ColumnNode>): ColumnNode[] => {
+  const result: ColumnNode[] = []
+  const inorderTraversal = node => {
+    if (!node.children?.length) {
+      // 叶子节点，添加到结果数组
+      result.push(node)
+      return
+    }
+    // 中序遍历
+    for (let i = 0; i < node.children?.length; i++) {
+      inorderTraversal(node.children[i])
+    }
+  }
+
+  // 遍历树中所有节点
+  tree.forEach(node => inorderTraversal(node))
+  return result
+}
+
+export const getColumns = (fields, cols: Array<ColumnNode>) => {
+  const result = []
+  for (let i = 0; i < cols.length; i++) {
+    if (fields.includes(cols[i].key)) {
+      result.push(cols[i])
+    }
+    if (cols[i].children?.length) {
+      result.push(...getColumns(fields, cols[i].children as Array<ColumnNode>))
+    }
+  }
+  return result
 }

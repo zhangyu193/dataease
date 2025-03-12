@@ -17,6 +17,7 @@ import { downloadCanvas2 } from '@/utils/imgUtils'
 import { isLink, setTitle } from '@/utils/utils'
 import EmptyBackground from '../../components/empty-background/src/EmptyBackground.vue'
 import { useRoute } from 'vue-router'
+import { filterEnumMapSync } from '@/utils/componentUtils'
 const routeWatch = useRoute()
 
 const dvMainStore = dvMainStoreWithOut()
@@ -80,7 +81,7 @@ const loadCanvasDataAsync = async (dvId, dvType, ignoreParams = false) => {
   // 添加外部参数
   let attachParam
   await getOuterParamsInfo(dvId).then(rsp => {
-    dvMainStore.setNowPanelOuterParamsInfo(rsp.data)
+    dvMainStore.setNowPanelOuterParamsInfoV2(rsp.data, dvId)
   })
 
   // 外部参数（iframe 或者 iframe嵌入）
@@ -112,21 +113,22 @@ const loadCanvasDataAsync = async (dvId, dvType, ignoreParams = false) => {
   await initCanvasData(
     dvId,
     dvType,
-    function ({
+    async function ({
       canvasDataResult,
       canvasStyleResult,
       dvInfo,
       canvasViewInfoPreview,
       curPreviewGap
     }) {
+      if (jumpParam) {
+        await filterEnumMapSync(canvasDataResult)
+        dvMainStore.addViewTrackFilter(jumpParam)
+      }
       state.canvasDataPreview = canvasDataResult
       state.canvasStylePreview = canvasStyleResult
       state.canvasViewInfoPreview = canvasViewInfoPreview
       state.dvInfo = dvInfo
       state.curPreviewGap = curPreviewGap
-      if (jumpParam) {
-        dvMainStore.addViewTrackFilter(jumpParam)
-      }
       if (!ignoreParams) {
         state.initState = false
         dvMainStore.addOuterParamsFilter(attachParam)
@@ -138,7 +140,7 @@ const loadCanvasDataAsync = async (dvId, dvType, ignoreParams = false) => {
         setTitle(dvInfo.name)
       }
       initBrowserTimer()
-      nextTick(() => {
+      await nextTick(() => {
         onInitReady({ resourceId: dvId })
       })
     }
@@ -165,7 +167,9 @@ watch(
 )
 
 let p = null
+let p1 = null
 const XpackLoaded = () => p(true)
+const initIframe = () => p1(true)
 onMounted(async () => {
   useEmitt({
     name: 'canvasDownload',
@@ -173,12 +177,17 @@ onMounted(async () => {
       downloadH2(type)
     }
   })
-  await new Promise(r => (p = r))
-  const dvId = embeddedStore.dvId || router.currentRoute.value.query.dvId
+  await Promise.all([new Promise(r => (p = r)), new Promise(r => (p1 = r))])
+  let dvId = embeddedStore.dvId || router.currentRoute.value.query.dvId
+  if (router.currentRoute.value.query.jumpInfoParam && router.currentRoute.value.query.dvId) {
+    dvId = router.currentRoute.value.query.dvId
+  }
   // 检查外部参数
   const ignoreParams = router.currentRoute.value.query.ignoreParams === 'true'
+  const isPopWindow = router.currentRoute.value.query.popWindow === 'true'
   const isFrameFlag = window.self !== window.top
   dvMainStore.setIframeFlag(isFrameFlag)
+  dvMainStore.setIsPopWindow(isPopWindow)
   const { dvType, callBackFlag, taskId, showWatermark } = router.currentRoute.value.query
   if (!!taskId) {
     dvMainStore.setCanvasAttachInfo({ taskId, showWatermark })
@@ -201,7 +210,12 @@ defineExpose({
 </script>
 
 <template>
-  <div class="content" :class="{ 'canvas_keep-size': dataVKeepSize }" ref="previewCanvasContainer">
+  <div
+    class="content"
+    v-loading="!state.initState"
+    :class="{ 'canvas_keep-size': dataVKeepSize }"
+    ref="previewCanvasContainer"
+  >
     <de-preview
       ref="dvPreview"
       v-if="state.canvasStylePreview && state.initState"
@@ -224,6 +238,12 @@ defineExpose({
     jsname="L2NvbXBvbmVudC9lbWJlZGRlZC1pZnJhbWUvTmV3V2luZG93SGFuZGxlcg=="
     @loaded="XpackLoaded"
     @load-fail="XpackLoaded"
+  />
+
+  <XpackComponent
+    jsname="L2NvbXBvbmVudC9lbWJlZGRlZC1pZnJhbWUvRW50cmFuY2Vz"
+    @init-iframe="initIframe"
+    @load-fail="initIframe"
   />
 </template>
 

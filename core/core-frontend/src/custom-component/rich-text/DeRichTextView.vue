@@ -174,9 +174,6 @@ const init = ref({
   branding: false,
   icons: 'vertical-content',
   vertical_align: element.value.propValue.verticalAlign,
-  table_default_attributes: {
-    width: '400' // 使用 table_default_attributes 设置表格的宽度
-  },
   table_default_styles: {
     width: '400px' // 或者使用 table_default_styles 设置宽度，单位为 px
   },
@@ -568,7 +565,8 @@ const calcData = (view: Chart, callback) => {
           state.viewDataInfo = res
           state.totalItems = res?.totalItems
           const curViewInfo = canvasViewInfo.value[element.value.id]
-          if (res.data) {
+          // 此处是编辑时使用，多仪表板嵌入 canvasViewInfo 会被覆盖可能出现无法读取情况
+          if (res.data && curViewInfo) {
             curViewInfo['curFields'] = res.data.fields
           }
           dvMainStore.setViewDataDetails(element.value.id, res)
@@ -666,12 +664,10 @@ const initCurFields = chartDetails => {
   }
   element.value.propValue['innerType'] = chartDetails.type
   element.value.propValue['render'] = chartDetails.render
-  if (chartDetails.type === 'rich-text') {
-    nextTick(() => {
-      initCurFieldsChange()
-      eventBus.emit('initCurFields-' + element.value.id)
-    })
-  }
+  nextTick(() => {
+    initCurFieldsChange()
+    eventBus.emit('initCurFields-' + element.value.id)
+  })
 }
 
 // 初始化此处不必刷新

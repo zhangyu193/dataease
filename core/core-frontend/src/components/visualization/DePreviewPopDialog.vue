@@ -20,11 +20,13 @@
       />
     </div>
   </el-dialog>
+  <XpackComponent ref="xpackIframe" jsname="L2NvbXBvbmVudC9lbWJlZGRlZC1pZnJhbWUvSWZyYW1lU2VsZg==" />
 </template>
 
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
-
+import { computed, reactive, ref } from 'vue'
+import { useEmbedded } from '@/store/modules/embedded'
+import { XpackComponent } from '@/components/plugin'
 const state = reactive({
   dialogShow: false,
   name: '',
@@ -33,7 +35,8 @@ const state = reactive({
   width: '70vw',
   height: '70%'
 })
-
+const xpackIframe = ref()
+const embeddedStore = useEmbedded()
 const dialogStyle = computed(() => {
   if (state.fullscreen) {
     return {}
@@ -43,7 +46,11 @@ const dialogStyle = computed(() => {
 })
 
 const previewInit = params => {
-  state.url = params.url
+  if (params.url.includes('?')) {
+    state.url = `${params.url}&popWindow=true`
+  } else {
+    state.url = `${params.url}&popWindow=true`
+  }
   if (params.size === 'large') {
     state.fullscreen = true
   } else if (params.size === 'middle') {
@@ -56,6 +63,15 @@ const previewInit = params => {
     state.height = '65%'
   }
   state.dialogShow = true
+  if (embeddedStore.getToken && state.url.includes('#/preview?dvId=')) {
+    if (xpackIframe?.value) {
+      const pm = {
+        methodName: 'iframeInit',
+        args: null
+      }
+      xpackIframe.value.invokeMethod(pm)
+    }
+  }
 }
 
 defineExpose({

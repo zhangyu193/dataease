@@ -1,8 +1,8 @@
 package io.dataease.engine.trans;
 
-import io.dataease.engine.constant.DeTypeConstants;
+import io.dataease.constant.DeTypeConstants;
 import io.dataease.engine.constant.ExtFieldConstant;
-import io.dataease.engine.constant.SQLConstants;
+import io.dataease.constant.SQLConstants;
 import io.dataease.engine.utils.Utils;
 import io.dataease.extensions.datasource.api.PluginManageApi;
 import io.dataease.extensions.datasource.constant.SqlPlaceholderConstants;
@@ -58,6 +58,14 @@ public class Quota2SQLObj {
                         originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), y.getOriginName());
                     } else {
                         originField = String.format(SQLConstants.FIELD_NAME, tableObj.getTableAlias(), y.getDataeaseName());
+                    }
+                } else if (ObjectUtils.isNotEmpty(y.getExtField()) && Objects.equals(y.getExtField(), ExtFieldConstant.EXT_GROUP)) {
+                    String groupFieldExp = Utils.transGroupFieldToSql(y, originFields, isCross, dsMap, pluginManage);
+                    // 给计算字段处加一个占位符，后续SQL方言转换后再替换
+                    originField = String.format(SqlPlaceholderConstants.CALC_FIELD_PLACEHOLDER, y.getId());
+                    fieldsDialect.put(originField, groupFieldExp);
+                    if (isCross) {
+                        originField = groupFieldExp;
                     }
                 } else {
                     if (StringUtils.equalsIgnoreCase(dsType, "es")) {

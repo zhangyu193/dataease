@@ -53,15 +53,8 @@ const props = defineProps({
     default: 'main'
   }
 })
-const {
-  canvasStyleData,
-  componentData,
-  canvasViewInfo,
-  canvasId,
-  canvasActive,
-  outerScale,
-  canvasPosition
-} = toRefs(props)
+const { canvasStyleData, componentData, canvasViewInfo, canvasId, canvasActive, canvasPosition } =
+  toRefs(props)
 const domId = ref('de-canvas-' + canvasId.value)
 // change-end
 
@@ -111,8 +104,7 @@ const handleNewFromCanvasMain = newComponentInfo => {
     component.x = cyGridster.value.findPositionX(component)
     dvMainStore.addComponent({
       component: component,
-      index: undefined,
-      componentData: componentData.value
+      index: undefined
     })
     adaptCurThemeCommonStyle(component)
     nextTick(() => {
@@ -121,7 +113,7 @@ const handleNewFromCanvasMain = newComponentInfo => {
         scrollTo(component.y)
       })
     })
-    snapshotStore.recordSnapshotCache('renderChart', component.id)
+    snapshotStore.recordSnapshotCacheWithPositionChange('renderChart', component.id)
   }
 }
 
@@ -134,7 +126,7 @@ const handleDrop = e => {
     addComponent.isShow = true
     syncShapeItemStyle(addComponent, baseWidth.value, baseHeight.value)
     cyGridster.value.handleMouseUp(e, addComponent, componentData.value.length - 1)
-    snapshotStore.recordSnapshotCache('renderChart', addComponent.id)
+    snapshotStore.recordSnapshotCacheWithPositionChange('renderChart', addComponent.id)
   }
 }
 
@@ -240,8 +232,7 @@ const moveOutFromTab = component => {
     dvMainStore.addComponent({
       component,
       index: undefined,
-      isFromGroup: true,
-      componentData: componentData.value
+      isFromGroup: true
     })
     addItemBox(component)
     canvasInit()
@@ -280,7 +271,7 @@ const getBaseMatrixSize = () => {
   }
 }
 
-const scrollTo = y => {
+const scrollTo = (y = 1) => {
   setTimeout(() => {
     canvasInner.value.scrollTo({
       top: (y - 1) * baseHeight.value,
@@ -343,7 +334,7 @@ defineExpose({
         :base-width="baseWidth"
         :base-height="baseHeight"
         :font-family="fontFamily"
-        @scrollCanvasToTop="scrollTo(1)"
+        @scrollCanvasAdjust="scrollTo"
       ></canvas-core>
     </div>
   </div>
