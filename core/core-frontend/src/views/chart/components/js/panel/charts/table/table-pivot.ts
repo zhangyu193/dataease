@@ -92,7 +92,8 @@ export class TablePivot extends S2ChartView<PivotSheet> {
       'showColTooltip',
       'showRowTooltip',
       'showHorizonBorder',
-      'showVerticalBorder'
+      'showVerticalBorder',
+      'rowHeaderFreeze'
     ],
     'table-total-selector': ['row', 'col'],
     'basic-style-selector': [
@@ -178,7 +179,7 @@ export class TablePivot extends S2ChartView<PivotSheet> {
     })
 
     // total config
-    const { basicStyle, tooltip, tableTotal } = parseJson(chart.customAttr)
+    const { basicStyle, tooltip, tableTotal, tableHeader } = parseJson(chart.customAttr)
     if (!tableTotal.row.subTotalsDimensionsNew || tableTotal.row.subTotalsDimensions == undefined) {
       tableTotal.row.subTotalsDimensions = r
     }
@@ -389,7 +390,8 @@ export class TablePivot extends S2ChartView<PivotSheet> {
       },
       dataCell: meta => {
         return new CustomDataCell(meta, meta.spreadsheet)
-      }
+      },
+      frozenRowHeader: !(tableHeader.rowHeaderFreeze === false)
     }
     // options
     s2Options.style = this.configStyle(chart, s2DataConfig)
@@ -583,6 +585,8 @@ export class TablePivot extends S2ChartView<PivotSheet> {
       s2.on(S2Event.COL_CELL_HOVER, event => this.showTooltip(s2, event, meta))
       s2.on(S2Event.ROW_CELL_HOVER, event => this.showTooltip(s2, event, meta))
       s2.on(S2Event.DATA_CELL_HOVER, event => this.showTooltip(s2, event, meta))
+      // touch
+      this.configTouchEvent(s2, drawOption, meta)
     }
     // empty data tip
     configEmptyDataStyle(s2, newData)
@@ -592,8 +596,6 @@ export class TablePivot extends S2ChartView<PivotSheet> {
     s2.on(S2Event.COL_CELL_CLICK, ev => this.headerCellClickAction(chart, ev, s2, action))
     // right click
     s2.on(S2Event.GLOBAL_CONTEXT_MENU, event => copyContent(s2, event, meta))
-    // touch
-    this.configTouchEvent(s2, drawOption, meta)
     // theme
     const customTheme = this.configTheme(chart)
     s2.setThemeCfg({ theme: customTheme })

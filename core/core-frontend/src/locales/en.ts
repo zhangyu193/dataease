@@ -2090,7 +2090,8 @@ export default {
     quota_position_row: 'Row',
     quota_col_label: 'Quota Column Label',
     table_grand_total_label: 'Total Alias',
-    table_field_total_label: 'Field Alias'
+    table_field_total_label: 'Field Alias',
+    table_row_header_freeze: 'Row Header Freeze'
   },
   dataset: {
     field_value: 'Field Value',
@@ -2784,7 +2785,8 @@ export default {
       no_children_text: 'No child nodes',
       no_options_text: 'No available options',
       no_results_text: 'No matching results'
-    }
+    },
+    char_count_limit: 'Cannot exceed {count} characters'
   },
   sql_variable: {
     variable_mgm: 'Parameter settings'

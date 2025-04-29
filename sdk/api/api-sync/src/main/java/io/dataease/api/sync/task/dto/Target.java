@@ -23,4 +23,5 @@ public class Target {
     private String datasourceVersion;
     private double faultToleranceRate;
     private String incrementFieldType;
+    private String remarks;
 }

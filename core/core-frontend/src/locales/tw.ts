@@ -2031,7 +2031,8 @@ export default {
     quota_position_row: '行頭展示',
     quota_col_label: '指標列名',
     table_grand_total_label: '總計別名',
-    table_field_total_label: '字段別名'
+    table_field_total_label: '字段別名',
+    table_row_header_freeze: '行頭凍結'
   },
   dataset: {
     field_value: '欄位值',
@@ -2714,7 +2715,8 @@ export default {
       no_children_text: '沒有子節點',
       no_options_text: '沒有可用選項',
       no_results_text: '沒有符合的結果'
-    }
+    },
+    char_count_limit: '不能超過{count}字元'
   },
   sql_variable: {
     variable_mgm: '參數設定'

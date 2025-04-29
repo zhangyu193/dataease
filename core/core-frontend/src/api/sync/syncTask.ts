@@ -111,6 +111,7 @@ export interface ITarget {
   incrementSync: string
   incrementField: string
   incrementFieldType: string
+  remarks: string
 }
 
 export class ITaskInfoRes {
