@@ -14,13 +14,14 @@ import io.dataease.utils.CommonBeanFactory;
 import io.dataease.utils.CommunityUtils;
 import io.dataease.utils.IDUtils;
 import io.dataease.visualization.dao.auto.entity.CoreStore;
-import io.dataease.visualization.dao.auto.mapper.CoreStoreMapper;
+import io.dataease.visualization.dao.auto.mapper.CoreStoreRepository;
 import io.dataease.visualization.dao.ext.mapper.CoreStoreExtMapper;
 import io.dataease.visualization.dao.ext.po.StorePO;
 import jakarta.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -30,8 +31,7 @@ import java.util.List;
 public class VisualizationStoreManage {
 
     @Resource
-    private CoreStoreMapper coreStoreMapper;
-
+    private CoreStoreRepository coreStoreRepository;
     @Resource
     private CoreStoreExtMapper coreStoreExtMapper;
 
@@ -39,10 +39,13 @@ public class VisualizationStoreManage {
         Long resourceId = request.getId();
         Long uid = AuthUtils.getUser().getUserId();
         if (favorited(resourceId)) {
-            QueryWrapper<CoreStore> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("resource_id", resourceId);
-            queryWrapper.eq("uid", uid);
-            coreStoreMapper.delete(queryWrapper);
+            Specification<CoreStore> spec = (root, query, cb) -> {
+                var predicates = cb.conjunction();
+                predicates.getExpressions().add(cb.equal(root.get("uid"), uid));
+                predicates.getExpressions().add(cb.equal(root.get("resourceId"), resourceId));
+                return predicates;
+            };
+            coreStoreRepository.delete(spec);
             return;
         }
         String type = request.getType();
@@ -56,14 +59,20 @@ public class VisualizationStoreManage {
         coreStore.setUid(uid);
         coreStore.setResourceId(resourceId);
         coreStore.setResourceType(busiResourceEnum.getFlag());
-        coreStoreMapper.insert(coreStore);
+        coreStoreRepository.saveAndFlush(coreStore);
     }
 
     public Boolean favorited(Long resourceId) {
         QueryWrapper<CoreStore> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("resource_id", resourceId);
         queryWrapper.eq("uid", AuthUtils.getUser().getUserId());
-        return coreStoreMapper.exists(queryWrapper);
+        Specification<CoreStore> spec = (root, query, cb) -> {
+            var predicates = cb.conjunction();
+            predicates.getExpressions().add(cb.equal(root.get("uid"), AuthUtils.getUser().getUserId()));
+            predicates.getExpressions().add(cb.equal(root.get("resourceId"), resourceId));
+            return predicates;
+        };
+        return coreStoreRepository.exists(spec);
     }
 
     @XpackInteract(value = "perFilterManage", recursion = true, invalid = true)

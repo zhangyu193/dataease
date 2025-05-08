@@ -7,17 +7,18 @@ import io.dataease.api.system.vo.ShareBaseVO;
 import io.dataease.datasource.server.DatasourceServer;
 import io.dataease.license.config.XpackInteract;
 import io.dataease.system.dao.auto.entity.CoreSysSetting;
-import io.dataease.system.dao.auto.mapper.CoreSysSettingMapper;
-import io.dataease.system.dao.ext.mapper.ExtCoreSysSettingMapper;
+import io.dataease.system.dao.auto.mapper.CoreSysSettingRepository;
 import io.dataease.utils.BeanUtils;
 import io.dataease.utils.CommonBeanFactory;
 import io.dataease.utils.IDUtils;
 import io.dataease.utils.SystemSettingUtils;
 import jakarta.annotation.Resource;
+import jakarta.persistence.criteria.Predicate;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,17 +37,18 @@ public class SysParameterManage {
     private static final String MAP_KEY_PREFIX = "map.";
 
     @Resource
-    private CoreSysSettingMapper coreSysSettingMapper;
+    private CoreSysSettingRepository coreSysSettingRepository;
 
-    @Resource
-    private ExtCoreSysSettingMapper extCoreSysSettingMapper;
     @Resource
     private DatasourceServer datasourceServer;
 
     public String singleVal(String key) {
-        QueryWrapper<CoreSysSetting> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("pkey", key);
-        CoreSysSetting sysSetting = coreSysSettingMapper.selectOne(queryWrapper);
+        Specification<CoreSysSetting> spec = (root, query, cb) -> {
+            var predicates = cb.conjunction();
+            predicates.getExpressions().add(cb.equal(root.get("pkey"), key));
+            return predicates;
+        };
+        CoreSysSetting sysSetting = coreSysSettingRepository.findOne(spec).orElse(null);
         if (ObjectUtils.isNotEmpty(sysSetting)) {
             return sysSetting.getPval();
         }
@@ -95,14 +97,23 @@ public class SysParameterManage {
         List<String> fieldNames = BeanUtils.getFieldNames(OnlineMapEditor.class);
         String finalMapType = mapType;
         fieldNames.forEach(field -> {
-            String prefix = MAP_KEY_PREFIX;
+            String prefix;
             if (!(StringUtils.equals(field, "mapType") || StringUtils.equals(finalMapType, "gaode"))) {
                 prefix = finalMapType + "." + MAP_KEY_PREFIX;
+            } else {
+                prefix = MAP_KEY_PREFIX;
             }
 
             QueryWrapper<CoreSysSetting> queryWrapper = new QueryWrapper<>();
             queryWrapper.eq("pkey", prefix + field);
-            CoreSysSetting sysSetting = coreSysSettingMapper.selectOne(queryWrapper);
+
+            Specification<CoreSysSetting> spec = (root, query, cb) -> {
+                var predicates = cb.conjunction();
+                predicates.getExpressions().add(cb.equal(root.get("pkey"), prefix + field));
+                return predicates;
+            };
+
+            CoreSysSetting sysSetting = coreSysSettingRepository.findOne(spec).orElse(null);
             var val = (String) BeanUtils.getFieldValueByName(field, editor);
             if (ObjectUtils.isEmpty(sysSetting)) {
                 sysSetting = new CoreSysSetting();
@@ -111,20 +122,23 @@ public class SysParameterManage {
                 sysSetting.setPval(val == null ? "" : val);
                 sysSetting.setType("text");
                 sysSetting.setSort(1);
-                coreSysSettingMapper.insert(sysSetting);
+                coreSysSettingRepository.saveAndFlush(sysSetting);
                 return;
             }
             sysSetting.setPval(val);
-            coreSysSettingMapper.updateById(sysSetting);
+            coreSysSettingRepository.saveAndFlush(sysSetting);
         });
     }
 
 
     public Map<String, String> groupVal(String groupKey) {
-        QueryWrapper<CoreSysSetting> queryWrapper = new QueryWrapper<>();
-        queryWrapper.likeRight("pkey", groupKey);
-        queryWrapper.orderByAsc("sort");
-        List<CoreSysSetting> sysSettings = coreSysSettingMapper.selectList(queryWrapper);
+        Specification<CoreSysSetting> spec = (root, query, cb) -> {
+            Predicate likeRight = cb.like(root.get("pkey"), groupKey + "%");
+            query.orderBy(cb.asc(root.get("sort")));
+            return likeRight;
+        };
+
+        List<CoreSysSetting> sysSettings = coreSysSettingRepository.findAll(spec);
         if (!CollectionUtils.isEmpty(sysSettings)) {
             return sysSettings.stream().collect(Collectors.toMap(CoreSysSetting::getPkey, CoreSysSetting::getPval));
         }
@@ -132,10 +146,13 @@ public class SysParameterManage {
     }
 
     public List<CoreSysSetting> groupList(String groupKey) {
-        QueryWrapper<CoreSysSetting> queryWrapper = new QueryWrapper<>();
-        queryWrapper.likeRight("pkey", groupKey);
-        queryWrapper.orderByAsc("sort");
-        return coreSysSettingMapper.selectList(queryWrapper);
+        Specification<CoreSysSetting> spec = (root, query, cb) -> {
+            Predicate likeRight = cb.like(root.get("pkey"), groupKey + "%");
+            query.orderBy(cb.asc(root.get("sort")));
+            return likeRight;
+        };
+
+        return coreSysSettingRepository.findAll(spec);
     }
 
     @XpackInteract(value = "perSetting")
@@ -173,13 +190,16 @@ public class SysParameterManage {
             return sysSetting;
         }).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(sysSettings)) {
-            QueryWrapper<CoreSysSetting> queryWrapper = new QueryWrapper<>();
             sysSettings.forEach(sysSetting -> {
-                queryWrapper.clear();
-                queryWrapper.eq("pkey", sysSetting.getPkey());
-                coreSysSettingMapper.delete(queryWrapper);
+                coreSysSettingRepository.deleteByPkey(sysSetting.getPkey());
             });
-            extCoreSysSettingMapper.saveBatch(sysSettings);
+
+            int batchSize = 1000;
+            for (int i = 0; i < sysSettings.size(); i += batchSize) {
+                int end = Math.min(i + batchSize, sysSettings.size());
+                coreSysSettingRepository.saveAll(sysSettings.subList(i, end));
+                coreSysSettingRepository.flush();
+            }
         }
         datasourceServer.addJob(sysSettings);
     }
@@ -210,7 +230,7 @@ public class SysParameterManage {
     }
 
     public void insert(CoreSysSetting coreSysSetting) {
-        coreSysSettingMapper.insert(coreSysSetting);
+        coreSysSettingRepository.saveAndFlush(coreSysSetting);
     }
 
 }

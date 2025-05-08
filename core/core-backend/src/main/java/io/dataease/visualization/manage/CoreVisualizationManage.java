@@ -20,8 +20,8 @@ import io.dataease.operation.manage.CoreOptRecentManage;
 import io.dataease.utils.*;
 import io.dataease.visualization.dao.auto.entity.DataVisualizationInfo;
 import io.dataease.visualization.dao.auto.entity.SnapshotDataVisualizationInfo;
-import io.dataease.visualization.dao.auto.mapper.DataVisualizationInfoMapper;
-import io.dataease.visualization.dao.auto.mapper.SnapshotDataVisualizationInfoMapper;
+import io.dataease.visualization.dao.auto.mapper.DataVisualizationInfoRepository;
+import io.dataease.visualization.dao.auto.mapper.SnapshotDataVisualizationInfoRepository;
 import io.dataease.visualization.dao.ext.mapper.*;
 import io.dataease.visualization.dao.ext.po.VisualizationNodePO;
 import io.dataease.visualization.dao.ext.po.VisualizationResourcePO;
@@ -44,10 +44,10 @@ public class CoreVisualizationManage {
     private CoreVisualiationExtMapper extMapper;
 
     @Resource
-    private DataVisualizationInfoMapper mapper;
+    private DataVisualizationInfoRepository dataVisualizationInfoRepository;
 
     @Resource
-    private SnapshotDataVisualizationInfoMapper snapshotMapper;
+    private SnapshotDataVisualizationInfoRepository snapshotDataVisualizationInfoRepository;
 
     @Resource
     private ExtVisualizationLinkageMapper linkageMapper;
@@ -99,7 +99,7 @@ public class CoreVisualizationManage {
 
     @XpackInteract(value = "visualizationResourceTree", before = false)
     public void delete(Long id) {
-        DataVisualizationInfo info = mapper.selectById(id);
+        DataVisualizationInfo info = dataVisualizationInfoRepository.findById(String.valueOf(id)).orElse(null);
         if (ObjectUtils.isEmpty(info)) {
             DEException.throwException("resource not exist");
         }
@@ -141,8 +141,8 @@ public class CoreVisualizationManage {
             SnapshotDataVisualizationInfo snapshotVisualizationInfo = new SnapshotDataVisualizationInfo();
             BeanUtils.copyBean(snapshotVisualizationInfo, visualizationInfo);
             coreOptRecentManage.saveOpt(visualizationInfo.getId(), OptConstants.OPT_RESOURCE_TYPE.VISUALIZATION, OptConstants.OPT_TYPE.UPDATE);
-            mapper.updateById(visualizationInfo);
-            snapshotMapper.updateById(snapshotVisualizationInfo);
+            dataVisualizationInfoRepository.saveAndFlush(visualizationInfo);
+            snapshotDataVisualizationInfoRepository.saveAndFlush(snapshotVisualizationInfo);
         }
     }
 
@@ -155,7 +155,7 @@ public class CoreVisualizationManage {
     public Long preInnerSave(DataVisualizationInfo visualizationInfo) {
         if (visualizationInfo.getId() == null) {
             Long id = IDUtils.snowID();
-            visualizationInfo.setId(id);
+            visualizationInfo.setId(String.valueOf(id));
         }
         visualizationInfo.setDeleteFlag(DataVisualizationConstants.DELETE_FLAG.AVAILABLE);
         visualizationInfo.setStatus(visualizationInfo.getStatus());
@@ -163,14 +163,14 @@ public class CoreVisualizationManage {
         visualizationInfo.setUpdateBy(AuthUtils.getUser().getUserId().toString());
         visualizationInfo.setCreateTime(System.currentTimeMillis());
         visualizationInfo.setUpdateTime(System.currentTimeMillis());
-        visualizationInfo.setOrgId(AuthUtils.getUser().getDefaultOid());
-        mapper.insert(visualizationInfo);
+        visualizationInfo.setOrgId(String.valueOf(AuthUtils.getUser().getDefaultOid()));
+        dataVisualizationInfoRepository.saveAndFlush(visualizationInfo);
         // 镜像文件插入
         SnapshotDataVisualizationInfo snapshotVisualizationInfo = new SnapshotDataVisualizationInfo();
         BeanUtils.copyBean(snapshotVisualizationInfo,visualizationInfo);
-        snapshotMapper.insert(snapshotVisualizationInfo);
+        snapshotDataVisualizationInfoRepository.saveAndFlush(snapshotVisualizationInfo);
         coreOptRecentManage.saveOpt(visualizationInfo.getId(), OptConstants.OPT_RESOURCE_TYPE.VISUALIZATION, OptConstants.OPT_TYPE.NEW);
-        return visualizationInfo.getId();
+        return Long.valueOf(visualizationInfo.getId());
     }
 
     @XpackInteract(value = "visualizationResourceTree", before = false)
@@ -182,7 +182,7 @@ public class CoreVisualizationManage {
         // 更新镜像
         SnapshotDataVisualizationInfo snapshotVisualizationInfo = new SnapshotDataVisualizationInfo();
         BeanUtils.copyBean(snapshotVisualizationInfo,visualizationInfo);
-        snapshotMapper.updateById(snapshotVisualizationInfo);
+        snapshotDataVisualizationInfoRepository.saveAndFlush(snapshotVisualizationInfo);
         // 更新主表名称
         DataVisualizationInfo coreVisualizationInfo = new DataVisualizationInfo();
         coreVisualizationInfo.setId(visualizationInfo.getId());
@@ -193,7 +193,7 @@ public class CoreVisualizationManage {
         coreVisualizationInfo.setUpdateTime(System.currentTimeMillis());
         coreVisualizationInfo.setUpdateBy(AuthUtils.getUser().getUserId().toString());
         coreVisualizationInfo.setVersion(3);
-        mapper.updateById(coreVisualizationInfo);
+        dataVisualizationInfoRepository.saveAndFlush(coreVisualizationInfo);
         coreOptRecentManage.saveOpt(visualizationInfo.getId(), OptConstants.OPT_RESOURCE_TYPE.VISUALIZATION, OptConstants.OPT_TYPE.UPDATE);
     }
 

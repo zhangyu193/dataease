@@ -2,7 +2,7 @@ package io.dataease.datasource.server;
 
 import io.dataease.api.ds.EngineApi;
 import io.dataease.datasource.dao.auto.entity.CoreDeEngine;
-import io.dataease.datasource.dao.auto.mapper.CoreDeEngineMapper;
+import io.dataease.datasource.dao.auto.repository.CoreDeEngineRepository;
 import io.dataease.datasource.manage.EngineManage;
 import io.dataease.datasource.provider.CalciteProvider;
 import io.dataease.exception.DEException;
@@ -25,7 +25,7 @@ import java.util.*;
 @Transactional(rollbackFor = Exception.class)
 public class EngineServer implements EngineApi {
     @Resource
-    private CoreDeEngineMapper deEngineMapper;
+    private CoreDeEngineRepository coreDeEngineRepository;
     @Resource
     private EngineManage engineManage;
     @Resource
@@ -37,7 +37,7 @@ public class EngineServer implements EngineApi {
             DEException.throwException("非管理员，无权访问！");
         }
         DatasourceDTO datasourceDTO = new DatasourceDTO();
-        List<CoreDeEngine> deEngines = deEngineMapper.selectList(null);
+        List<CoreDeEngine> deEngines = coreDeEngineRepository.findAll();
         if (CollectionUtils.isEmpty(deEngines)) {
             return datasourceDTO;
         }
@@ -59,9 +59,9 @@ public class EngineServer implements EngineApi {
         if (coreDeEngine.getId() == null) {
             coreDeEngine.setId(IDUtils.snowID());
             datasourceDTO.setId(coreDeEngine.getId());
-            deEngineMapper.insert(coreDeEngine);
+            coreDeEngineRepository.saveAndFlush(coreDeEngine);
         } else {
-            deEngineMapper.updateById(coreDeEngine);
+            coreDeEngineRepository.saveAndFlush(coreDeEngine);
         }
         calciteProvider.update(datasourceDTO);
     }
@@ -82,12 +82,12 @@ public class EngineServer implements EngineApi {
         if (!AuthUtils.getUser().getUserId().equals(1L)) {
             DEException.throwException("非管理员，无权访问！");
         }
-        engineManage.validate(deEngineMapper.selectById(id));
+        engineManage.validate(coreDeEngineRepository.findById(id).orElse(null));
     }
 
     @Override
     public boolean supportSetKey() throws Exception {
-        List<CoreDeEngine> deEngines = deEngineMapper.selectList(null);
+        List<CoreDeEngine> deEngines = coreDeEngineRepository.findAll();
         if (CollectionUtils.isEmpty(deEngines)) {
             return false;
         } else {

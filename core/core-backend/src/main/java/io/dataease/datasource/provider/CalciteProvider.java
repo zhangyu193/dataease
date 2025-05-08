@@ -5,7 +5,6 @@ import io.dataease.commons.utils.EncryptUtils;
 import io.dataease.constant.SQLConstants;
 import io.dataease.dataset.utils.FieldUtils;
 import io.dataease.datasource.dao.auto.entity.CoreDatasource;
-import io.dataease.datasource.dao.auto.entity.CoreDriver;
 import io.dataease.datasource.dao.auto.repository.CoreDatasourceRepository;
 import io.dataease.datasource.manage.EngineManage;
 import io.dataease.datasource.request.EngineRequest;
@@ -1529,59 +1528,6 @@ public class CalciteProvider extends Provider {
         } else {
             return getStatement(connection, queryTimeout);
         }
-    }
-
-    protected boolean isDefaultClassLoader(String customDriver) {
-        return StringUtils.isEmpty(customDriver) || customDriver.equalsIgnoreCase("default");
-    }
-
-    protected ExtendedJdbcClassLoader getCustomJdbcClassLoader(CoreDriver coreDriver) {
-        if (coreDriver == null) {
-            DEException.throwException("Can not found custom Driver");
-        }
-        ExtendedJdbcClassLoader customJdbcClassLoader = customJdbcClassLoaders.get(coreDriver.getId());
-        if (customJdbcClassLoader == null) {
-            return addCustomJdbcClassLoader(coreDriver);
-        } else {
-            if (StringUtils.isNotEmpty(customJdbcClassLoader.getDriver()) && customJdbcClassLoader.getDriver().equalsIgnoreCase(coreDriver.getDriverClass())) {
-                return customJdbcClassLoader;
-            } else {
-                customJdbcClassLoaders.remove(coreDriver.getId());
-                return addCustomJdbcClassLoader(coreDriver);
-            }
-        }
-    }
-
-    private synchronized ExtendedJdbcClassLoader addCustomJdbcClassLoader(CoreDriver coreDriver) {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        while (classLoader.getParent() != null) {
-            classLoader = classLoader.getParent();
-            if (classLoader.toString().contains("ExtClassLoader")) {
-                break;
-            }
-        }
-        try {
-            ExtendedJdbcClassLoader customJdbcClassLoader = new ExtendedJdbcClassLoader(new URL[]{new File(CUSTOM_PATH + coreDriver.getId()).toURI().toURL()}, classLoader);
-            customJdbcClassLoader.setDriver(coreDriver.getDriverClass());
-            File file = new File(CUSTOM_PATH + coreDriver.getId());
-            File[] array = file.listFiles();
-            Optional.ofNullable(array).ifPresent(files -> {
-                for (File tmp : array) {
-                    if (tmp.getName().endsWith(".jar")) {
-                        try {
-                            customJdbcClassLoader.addFile(tmp);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            });
-            customJdbcClassLoaders.put(coreDriver.getId(), customJdbcClassLoader);
-            return customJdbcClassLoader;
-        } catch (Exception e) {
-            DEException.throwException(e.getMessage());
-        }
-        return null;
     }
 
     private Connection connection = null;

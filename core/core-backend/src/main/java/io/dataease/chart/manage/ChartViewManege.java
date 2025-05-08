@@ -36,8 +36,8 @@ import io.dataease.utils.JsonUtil;
 import io.dataease.utils.LogUtil;
 import io.dataease.visualization.dao.auto.entity.DataVisualizationInfo;
 import io.dataease.visualization.dao.auto.entity.SnapshotCoreChartView;
-import io.dataease.visualization.dao.auto.mapper.DataVisualizationInfoMapper;
-import io.dataease.visualization.dao.auto.mapper.SnapshotCoreChartViewMapper;
+import io.dataease.visualization.dao.auto.mapper.DataVisualizationInfoRepository;
+import io.dataease.visualization.dao.auto.mapper.SnapshotCoreChartViewRepository;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -62,7 +62,7 @@ public class ChartViewManege {
     @Resource
     private CoreChartViewRepository coreChartViewRepository;
     @Resource
-    private SnapshotCoreChartViewMapper snapshotCoreChartViewMapper;
+    private SnapshotCoreChartViewRepository snapshotCoreChartViewRepository;
     @Resource
     private ChartDataManage chartDataManage;
     @Resource
@@ -71,7 +71,7 @@ public class ChartViewManege {
     private PermissionManage permissionManage;
 
     @Resource
-    private DataVisualizationInfoMapper visualizationInfoMapper;
+    private DataVisualizationInfoRepository dataVisualizationInfoRepository;
 
     @Resource
     private ExtChartViewMapper extChartViewMapper;
@@ -92,20 +92,12 @@ public class ChartViewManege {
         if (id == null) {
             DEException.throwException(Translator.get("i18n_no_id"));
         }
-        SnapshotCoreChartView coreChartView = snapshotCoreChartViewMapper.selectById(id);
+        SnapshotCoreChartView coreChartView = snapshotCoreChartViewRepository.findById(id).orElse(null);
         SnapshotCoreChartView record = transDTO2Record(chartViewDTO);
         if (ObjectUtils.isEmpty(coreChartView)) {
-            snapshotCoreChartViewMapper.deleteById(record.getId());
-            snapshotCoreChartViewMapper.insert(record);
-        } else {
-            UpdateWrapper<SnapshotCoreChartView> updateWrapper = new UpdateWrapper<>();
-            updateWrapper.eq("id", record.getId());
-            //富文本允许设置空的tableId 这里额外更新一下
-            if (record.getTableId() == null) {
-                updateWrapper.set("table_id", null);
-            }
-            snapshotCoreChartViewMapper.update(record, updateWrapper);
+            snapshotCoreChartViewRepository.deleteById(record.getId());
         }
+        snapshotCoreChartViewRepository.saveAndFlush(record);
         return chartViewDTO;
     }
 
@@ -142,7 +134,7 @@ public class ChartViewManege {
     public ChartViewDTO getDetails(Long id, String resourceTable) {
         CoreChartView coreChartView = null;
         if (CommonConstants.RESOURCE_TABLE.SNAPSHOT.equals(resourceTable)) {
-            SnapshotCoreChartView snapshotCoreChartView = snapshotCoreChartViewMapper.selectById(id);
+            SnapshotCoreChartView snapshotCoreChartView = snapshotCoreChartViewRepository.findById(id).orElse(null);
             if (ObjectUtils.isEmpty(snapshotCoreChartView)) {
                 return null;
             }
@@ -409,11 +401,10 @@ public class ChartViewManege {
     public SnapshotCoreChartView transDTO2Record(ChartViewDTO dto) throws Exception {
         SnapshotCoreChartView record = new SnapshotCoreChartView();
         BeanUtils.copyBean(record, dto);
-
-        record.setxAxis(objectMapper.writeValueAsString(dto.getXAxis()));
-        record.setxAxisExt(objectMapper.writeValueAsString(dto.getXAxisExt()));
-        record.setyAxis(objectMapper.writeValueAsString(dto.getYAxis()));
-        record.setyAxisExt(objectMapper.writeValueAsString(dto.getYAxisExt()));
+        record.setXAxis(objectMapper.writeValueAsString(dto.getXAxis()));
+        record.setXAxisExt(objectMapper.writeValueAsString(dto.getXAxisExt()));
+        record.setYAxis(objectMapper.writeValueAsString(dto.getYAxis()));
+        record.setYAxisExt(objectMapper.writeValueAsString(dto.getYAxisExt()));
         record.setExtStack(objectMapper.writeValueAsString(dto.getExtStack()));
         record.setExtBubble(objectMapper.writeValueAsString(dto.getExtBubble()));
         record.setExtLabel(objectMapper.writeValueAsString(dto.getExtLabel()));
@@ -487,7 +478,7 @@ public class ChartViewManege {
 
     public List<ViewSelectorVO> viewOption(Long resourceId) {
         List<ViewSelectorVO> result = extChartViewMapper.queryViewOption(resourceId);
-        DataVisualizationInfo dvInfo = visualizationInfoMapper.selectById(resourceId);
+        DataVisualizationInfo dvInfo = dataVisualizationInfoRepository.findById(String.valueOf(resourceId)).orElse(null);
         if (dvInfo != null && !CollectionUtils.isEmpty(result)) {
             String componentData = dvInfo.getComponentData();
             return result.stream().filter(item -> componentData.indexOf(String.valueOf(item.getId())) > 0).toList();

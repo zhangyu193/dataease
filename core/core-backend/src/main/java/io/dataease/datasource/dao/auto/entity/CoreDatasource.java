@@ -13,7 +13,6 @@ import org.hibernate.annotations.ColumnDefault;
 @Table(name = "core_datasource")
 public class CoreDatasource {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 

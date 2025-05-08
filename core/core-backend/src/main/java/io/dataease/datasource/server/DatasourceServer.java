@@ -18,9 +18,9 @@ import io.dataease.constant.SQLConstants;
 import io.dataease.dataset.manage.DatasetDataManage;
 import io.dataease.dataset.utils.TableUtils;
 import io.dataease.datasource.dao.auto.entity.*;
-import io.dataease.datasource.dao.auto.mapper.CoreDsFinishPageMapper;
 import io.dataease.datasource.dao.auto.mapper.QrtzSchedulerStateMapper;
 import io.dataease.datasource.dao.auto.repository.CoreDatasourceRepository;
+import io.dataease.datasource.dao.auto.repository.CoreDsFinishPageRepository;
 import io.dataease.datasource.dao.ext.mapper.DataSourceExtMapper;
 import io.dataease.datasource.dao.ext.mapper.TaskLogExtMapper;
 import io.dataease.datasource.manage.DataSourceManage;
@@ -94,7 +94,7 @@ public class DatasourceServer implements DatasourceApi {
     @Resource
     private DataSourceExtMapper dataSourceExtMapper;
     @Resource
-    private CoreDsFinishPageMapper coreDsFinishPageMapper;
+    private CoreDsFinishPageRepository coreDsFinishPageRepository;
     @Resource
     private DatasetDataManage datasetDataManage;
     @Resource
@@ -1203,14 +1203,14 @@ public class DatasourceServer implements DatasourceApi {
     }
 
     public boolean showFinishPage() throws DEException {
-        return coreDsFinishPageMapper.selectById(AuthUtils.getUser().getUserId()) == null;
+        return coreDsFinishPageRepository.findById(AuthUtils.getUser().getUserId()).orElse(null) == null;
     }
 
 
     public void setShowFinishPage() throws DEException {
         CoreDsFinishPage coreDsFinishPage = new CoreDsFinishPage();
         coreDsFinishPage.setId(AuthUtils.getUser().getUserId());
-        coreDsFinishPageMapper.insert(coreDsFinishPage);
+        coreDsFinishPageRepository.saveAndFlush(coreDsFinishPage);
     }
 
     private DatasourceDTO transDTO(CoreDatasource record) {
