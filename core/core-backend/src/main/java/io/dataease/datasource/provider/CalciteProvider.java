@@ -1,6 +1,7 @@
 package io.dataease.datasource.provider;
 
 import com.jcraft.jsch.Session;
+import io.dataease.commons.utils.EncryptUtils;
 import io.dataease.constant.SQLConstants;
 import io.dataease.dataset.utils.FieldUtils;
 import io.dataease.datasource.dao.auto.entity.CoreDatasource;
@@ -1594,6 +1595,7 @@ public class CalciteProvider extends Provider {
         }
 
         for (CoreDatasource coreDatasource : coreDatasources) {
+            coreDatasource.setConfiguration((String) EncryptUtils.aesDecrypt(coreDatasource.getConfiguration()));
             Map<Long, DatasourceSchemaDTO> dsMap = new HashMap<>();
             DatasourceSchemaDTO datasourceSchemaDTO = new DatasourceSchemaDTO();
             BeanUtils.copyBean(datasourceSchemaDTO, coreDatasource);
