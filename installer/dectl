@@ -255,7 +255,7 @@ function upgrade() {
       echo "最新版本与当前版本一致,退出升级过程"
       exit 0
    else
-      if [[ ! "$latest_version" =~ ^v2.* ]];then
+      if [[ ! "$latest_version" =~ ^v3.* ]];then
          echo "获取到的最新版本与当前版本不匹配，请访问 https://community.fit2cloud.com/#/products/dataease/downloads 下载离线安装包"
          exit 1
       else
