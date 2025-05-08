@@ -7,12 +7,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dataease.api.chart.vo.ChartBaseVO;
 import io.dataease.api.chart.vo.ViewSelectorVO;
 import io.dataease.chart.dao.auto.entity.CoreChartView;
-import io.dataease.chart.dao.auto.mapper.CoreChartViewMapper;
+import io.dataease.chart.dao.auto.mapper.CoreChartViewRepository;
 import io.dataease.chart.dao.ext.entity.ChartBasePO;
 import io.dataease.chart.dao.ext.mapper.ExtChartViewMapper;
 import io.dataease.constant.CommonConstants;
 import io.dataease.dataset.dao.auto.entity.CoreDatasetTableField;
-import io.dataease.dataset.dao.auto.mapper.CoreDatasetTableFieldMapper;
+import io.dataease.dataset.dao.auto.mapper.CoreDatasetTableFieldRepository;
 import io.dataease.dataset.manage.DatasetTableFieldManage;
 import io.dataease.dataset.manage.PermissionManage;
 import io.dataease.dataset.utils.TableUtils;
@@ -42,6 +42,7 @@ import jakarta.annotation.Resource;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -59,13 +60,13 @@ import java.util.stream.Collectors;
 @Component
 public class ChartViewManege {
     @Resource
-    private CoreChartViewMapper coreChartViewMapper;
+    private CoreChartViewRepository coreChartViewRepository;
     @Resource
     private SnapshotCoreChartViewMapper snapshotCoreChartViewMapper;
     @Resource
     private ChartDataManage chartDataManage;
     @Resource
-    private CoreDatasetTableFieldMapper coreDatasetTableFieldMapper;
+    private CoreDatasetTableFieldRepository coreDatasetTableFieldRepository;
     @Resource
     private PermissionManage permissionManage;
 
@@ -109,7 +110,7 @@ public class ChartViewManege {
     }
 
     public void delete(Long id) {
-        coreChartViewMapper.deleteById(id);
+        coreChartViewRepository.deleteById(id);
     }
 
     @XpackInteract(value = "chartViewManage")
@@ -135,9 +136,7 @@ public class ChartViewManege {
     @Transactional
     public void deleteBySceneId(Long sceneId, List<Long> chartIds) {
         QueryWrapper<CoreChartView> wrapper = new QueryWrapper<>();
-        wrapper.eq("scene_id", sceneId);
-        wrapper.notIn("id", chartIds);
-        coreChartViewMapper.delete(wrapper);
+        coreChartViewRepository.deleteBySceneIdAndNotInIds(sceneId, chartIds);
     }
 
     public ChartViewDTO getDetails(Long id, String resourceTable) {
@@ -150,7 +149,7 @@ public class ChartViewManege {
             coreChartView = new CoreChartView();
             BeanUtils.copyBean(coreChartView, snapshotCoreChartView);
         } else {
-            coreChartView = coreChartViewMapper.selectById(id);
+            coreChartView = coreChartViewRepository.findById(id).orElse(null);
             if (ObjectUtils.isEmpty(coreChartView)) {
                 return null;
             }
@@ -173,9 +172,7 @@ public class ChartViewManege {
                     .distinct()
                     .toList();
             if (!CollectionUtils.isEmpty(tableIds)) {
-                QueryWrapper<CoreDatasetTableField> wp = new QueryWrapper<>();
-                wp.in("dataset_group_id", tableIds);
-                List<CoreDatasetTableField> coreDatasetTableFields = coreDatasetTableFieldMapper.selectList(wp);
+                List<CoreDatasetTableField> coreDatasetTableFields = coreDatasetTableFieldRepository.findByDatasetGroupIdIn(tableIds);
                 Map<Long, List<CoreDatasetTableField>> groupedByTableId = coreDatasetTableFields.stream()
                         .collect(Collectors.groupingBy(CoreDatasetTableField::getDatasetGroupId));
                 if (chartViewDTOS.size() < 10) {
@@ -238,16 +235,18 @@ public class ChartViewManege {
     }
 
     public Map<String, List<ChartViewFieldDTO>> listByDQ(Long id, Long chartId, ChartViewDTO chartViewDTO) {
-        QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
-        wrapper.eq("dataset_group_id", id);
-        wrapper.eq("checked", true);
-        wrapper.isNull("chart_id");
-
         TypeReference<List<CalParam>> typeToken = new TypeReference<>() {
         };
         TypeReference<List<FieldGroupDTO>> groupTokenType = new TypeReference<>() {
         };
-        List<CoreDatasetTableField> fields = coreDatasetTableFieldMapper.selectList(wrapper);
+        Specification<CoreDatasetTableField> spec = (root, query, cb) -> {
+            var predicates = cb.conjunction();
+            predicates.getExpressions().add(cb.equal(root.get("datasetGroupId"), id));
+            predicates.getExpressions().add(cb.isTrue(root.get("checked")));
+            predicates.getExpressions().add(cb.isNull(root.get("chartId")));
+            return predicates;
+        };
+        List<CoreDatasetTableField> fields = coreDatasetTableFieldRepository.findAll(spec);
         List<DatasetTableFieldDTO> collect = fields.stream().map(ele -> {
             DatasetTableFieldDTO dto = new DatasetTableFieldDTO();
             BeanUtils.copyBean(dto, ele);
@@ -263,9 +262,7 @@ public class ChartViewManege {
         List<ChartViewFieldDTO> list = transFieldDTO(datasetTableFieldDTOS);
 
         // 获取图表计算字段
-        wrapper.clear();
-        wrapper.eq("chart_id", chartId);
-        List<DatasetTableFieldDTO> chartFields = coreDatasetTableFieldMapper.selectList(wrapper).stream().map(ele -> {
+        List<DatasetTableFieldDTO> chartFields = coreDatasetTableFieldRepository.findByChartId(chartId).stream().map(ele -> {
             DatasetTableFieldDTO dto = new DatasetTableFieldDTO();
             BeanUtils.copyBean(dto, ele);
             dto.setGroupList(JsonUtil.parseList(ele.getGroupList(), groupTokenType));
@@ -305,10 +302,9 @@ public class ChartViewManege {
     }
 
     public void copyField(Long id, Long chartId) {
-        CoreDatasetTableField coreDatasetTableField = coreDatasetTableFieldMapper.selectById(id);
-        QueryWrapper<CoreDatasetTableField> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("dataset_group_id", coreDatasetTableField.getDatasetGroupId());
-        List<CoreDatasetTableField> coreDatasetTableFields = coreDatasetTableFieldMapper.selectList(queryWrapper);
+        CoreDatasetTableField coreDatasetTableField = coreDatasetTableFieldRepository.findById(id).orElse(null);
+        List<CoreDatasetTableField> coreDatasetTableFields = coreDatasetTableFieldRepository.findByDatasetGroupId(coreDatasetTableField.getDatasetGroupId());
+
         HashMap<String, String> map = new HashMap<>();
         for (CoreDatasetTableField ele : coreDatasetTableFields) {
             map.put(ele.getName(), ele.getName());
@@ -320,7 +316,7 @@ public class ChartViewManege {
         coreDatasetTableField.setId(IDUtils.snowID());
         coreDatasetTableField.setDataeaseName(TableUtils.fieldNameShort(coreDatasetTableField.getId() + "_" + coreDatasetTableField.getOriginName()));
         coreDatasetTableField.setFieldShortName(coreDatasetTableField.getDataeaseName());
-        coreDatasetTableFieldMapper.insert(coreDatasetTableField);
+        coreDatasetTableFieldRepository.saveAndFlush(coreDatasetTableField);
     }
 
     private void newName(HashMap<String, String> map, CoreDatasetTableField coreDatasetTableField, String name) {
@@ -333,13 +329,13 @@ public class ChartViewManege {
     }
 
     public void deleteField(Long id) {
-        coreDatasetTableFieldMapper.deleteById(id);
+        coreDatasetTableFieldRepository.deleteById(id);
     }
 
     public void deleteFieldByChartId(Long chartId) {
         QueryWrapper<CoreDatasetTableField> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("chart_id", chartId);
-        coreDatasetTableFieldMapper.delete(queryWrapper);
+        coreDatasetTableFieldRepository.deleteByChartId(chartId);
     }
 
     public ChartBaseVO chartBaseInfo(Long id, String resourceTable) {
@@ -447,11 +443,10 @@ public class ChartViewManege {
 
         TypeReference<List<ChartViewFieldDTO>> tokenType = new TypeReference<>() {
         };
-
-        dto.setXAxis(JsonUtil.parseList(record.getxAxis(), tokenType));
-        dto.setXAxisExt(JsonUtil.parseList(record.getxAxisExt(), tokenType));
-        dto.setYAxis(JsonUtil.parseList(record.getyAxis(), tokenType));
-        dto.setYAxisExt(JsonUtil.parseList(record.getyAxisExt(), tokenType));
+        dto.setXAxis(JsonUtil.parseList(record.getXAxis(), tokenType));
+        dto.setXAxisExt(JsonUtil.parseList(record.getXAxisExt(), tokenType));
+        dto.setYAxis(JsonUtil.parseList(record.getYAxis(), tokenType));
+        dto.setYAxisExt(JsonUtil.parseList(record.getYAxisExt(), tokenType));
         dto.setExtStack(JsonUtil.parseList(record.getExtStack(), tokenType));
         dto.setExtBubble(JsonUtil.parseList(record.getExtBubble(), tokenType));
         dto.setExtLabel(JsonUtil.parseList(record.getExtLabel(), tokenType));
@@ -482,8 +477,7 @@ public class ChartViewManege {
         QueryWrapper<CoreChartView> wrapper = new QueryWrapper<>();
         wrapper.select("distinct table_id");
         wrapper.in("id", Arrays.asList(viewIdSource, viewIdTarget));
-        coreChartViewMapper.selectCount(wrapper);
-        if (coreChartViewMapper.selectCount(wrapper) == 1) {
+        if (coreChartViewRepository.countDistinctTableIdByIdIn(Arrays.asList(viewIdSource, viewIdTarget)) == 1) {
             return "YES";
         } else {
             return "NO";

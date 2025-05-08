@@ -7,8 +7,6 @@ import io.dataease.api.visualization.dto.VisualizationLinkageDTO;
 import io.dataease.api.visualization.request.VisualizationLinkageRequest;
 import io.dataease.api.visualization.vo.VisualizationLinkageFieldVO;
 import io.dataease.auth.DeLinkPermit;
-import io.dataease.chart.dao.auto.entity.CoreChartView;
-import io.dataease.chart.dao.auto.mapper.CoreChartViewMapper;
 import io.dataease.constant.CommonConstants;
 import io.dataease.utils.BeanUtils;
 import io.dataease.utils.IDUtils;
@@ -37,22 +35,10 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
     private ExtVisualizationLinkageMapper extVisualizationLinkageMapper;
 
     @Resource
-    private VisualizationLinkageFieldMapper visualizationLinkageFieldMapper;
-
-    @Resource
     private SnapshotVisualizationLinkageFieldMapper snapshotVisualizationLinkageFieldMapper;
 
     @Resource
-    private VisualizationLinkageMapper visualizationLinkageMapper;
-
-    @Resource
     private SnapshotVisualizationLinkageMapper snapshotVisualizationLinkageMapper;
-
-    @Resource
-    private DataVisualizationInfoMapper dataVisualizationInfoMapper;
-
-    @Resource
-    private CoreChartViewMapper coreChartViewMapper;
 
     @Resource
     private SnapshotCoreChartViewMapper snapshotCoreChartViewMapper;

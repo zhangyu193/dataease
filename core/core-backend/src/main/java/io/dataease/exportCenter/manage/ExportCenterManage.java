@@ -16,11 +16,12 @@ import io.dataease.api.permissions.dataset.dto.DataSetRowPermissionsTreeDTO;
 import io.dataease.api.xpack.dataFilling.DataFillingApi;
 import io.dataease.api.xpack.dataFilling.dto.DataFillFormTableDataRequest;
 import io.dataease.auth.bo.TokenUserBO;
-import io.dataease.chart.dao.auto.mapper.CoreChartViewMapper;
+import io.dataease.chart.dao.auto.entity.CoreChartView;
+import io.dataease.chart.dao.auto.mapper.CoreChartViewRepository;
 import io.dataease.chart.server.ChartDataServer;
 import io.dataease.commons.utils.ExcelWatermarkUtils;
 import io.dataease.dataset.dao.auto.entity.CoreDatasetGroup;
-import io.dataease.dataset.dao.auto.mapper.CoreDatasetGroupMapper;
+import io.dataease.dataset.dao.auto.mapper.CoreDatasetGroupRepository;
 import io.dataease.dataset.manage.*;
 import io.dataease.datasource.utils.DatasourceUtils;
 import io.dataease.constant.DeTypeConstants;
@@ -95,7 +96,7 @@ public class ExportCenterManage implements BaseExportApi {
     @Resource
     DataVisualizationServer dataVisualizationServer;
     @Resource
-    private CoreChartViewMapper coreChartViewMapper;
+    private CoreChartViewRepository coreChartViewRepository;
     @Resource
     private PermissionManage permissionManage;
     @Autowired
@@ -131,7 +132,7 @@ public class ExportCenterManage implements BaseExportApi {
     @Resource
     private ChartDataServer chartDataServer;
     @Resource
-    private CoreDatasetGroupMapper coreDatasetGroupMapper;
+    private CoreDatasetGroupRepository coreDatasetGroupRepository;
     @Resource
     private CoreUserManage coreUserManage;
     @Resource
@@ -353,10 +354,10 @@ public class ExportCenterManage implements BaseExportApi {
 
     private void setExportFromName(ExportTaskDTO exportTaskDTO) {
         if (exportTaskDTO.getExportFromType().equalsIgnoreCase("chart")) {
-            exportTaskDTO.setExportFromName(coreChartViewMapper.selectById(exportTaskDTO.getExportFrom()).getTitle());
+            exportTaskDTO.setExportFromName(coreChartViewRepository.findById(Long.valueOf(exportTaskDTO.getExportFrom())).orElse(new CoreChartView()).getTitle());
         }
         if (exportTaskDTO.getExportFromType().equalsIgnoreCase("dataset")) {
-            exportTaskDTO.setExportFromName(coreDatasetGroupMapper.selectById(exportTaskDTO.getExportFrom()).getName());
+            exportTaskDTO.setExportFromName(coreDatasetGroupRepository.findById(Long.valueOf(exportTaskDTO.getExportFrom())).orElse(null).getName());
         }
         if (exportTaskDTO.getExportFromType().equalsIgnoreCase("data_filling")) {
             exportTaskDTO.setExportFromName(getDataFillingApi().get(Long.parseLong(exportTaskDTO.getExportFrom())).getName());
@@ -474,7 +475,7 @@ public class ExportCenterManage implements BaseExportApi {
             try {
                 exportTask.setExportStatus("IN_PROGRESS");
                 exportTaskMapper.updateById(exportTask);
-                CoreDatasetGroup coreDatasetGroup = coreDatasetGroupMapper.selectById(exportTask.getExportFrom());
+                CoreDatasetGroup coreDatasetGroup = coreDatasetGroupRepository.findById(Long.valueOf(exportTask.getExportFrom())).orElse(null);
                 if (coreDatasetGroup == null) {
                     throw new Exception("Not found dataset group: " + exportTask.getExportFrom());
                 }

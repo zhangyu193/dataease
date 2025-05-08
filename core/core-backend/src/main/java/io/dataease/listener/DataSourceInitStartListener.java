@@ -74,7 +74,6 @@ public class DataSourceInitStartListener implements ApplicationListener<Applicat
         } catch (Exception e) {
             e.printStackTrace();
         }
-        dataSourceManage.encryptDsConfig();
     }
 
 

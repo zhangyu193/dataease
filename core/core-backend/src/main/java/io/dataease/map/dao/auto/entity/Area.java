@@ -1,4 +1,4 @@
-package io.dataease.map.dao.ext.entity;
+package io.dataease.map.dao.auto.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,16 +12,19 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "core_area_custom")
-public class CoreAreaCustom {
+@Table(name = "area")
+public class Area {
     @Id
     @Size(max = 255)
     @Column(name = "id", nullable = false)
     private String id;
 
     @Size(max = 255)
-    @NotNull
-    @Column(name = "name", nullable = false)
+    @Column(name = "level")
+    private String level;
+
+    @Size(max = 255)
+    @Column(name = "name")
     private String name;
 
     @Size(max = 255)

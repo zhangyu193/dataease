@@ -63,7 +63,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.awt.print.Pageable;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -747,6 +746,7 @@ public class DatasourceServer implements DatasourceApi {
         if (coreDatasource == null) {
             DEException.throwException("无效数据源！");
         }
+        System.out.println(JsonUtil.toJSONString(coreDatasource));
         DatasourceDTO datasourceDTO = new DatasourceDTO();
         BeanUtils.copyBean(datasourceDTO, coreDatasource);
         DatasourceRequest datasourceRequest = new DatasourceRequest();

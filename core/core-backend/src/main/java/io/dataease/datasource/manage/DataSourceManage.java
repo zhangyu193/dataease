@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import io.dataease.commons.constants.OptConstants;
 import io.dataease.commons.constants.TaskStatus;
+import io.dataease.commons.utils.EncryptUtils;
 import io.dataease.datasource.dao.auto.entity.CoreDatasource;
 import io.dataease.datasource.dao.auto.repository.CoreDatasourceRepository;
 import io.dataease.datasource.dao.ext.mapper.CoreDatasourceExtMapper;
@@ -200,16 +201,16 @@ public class DataSourceManage {
         coreOptRecentManage.saveOpt(sourceData.getId(), OptConstants.OPT_RESOURCE_TYPE.DATASOURCE, OptConstants.OPT_TYPE.UPDATE);
     }
 
-
-    public void encryptDsConfig() {
-        coreDatasourceRepository.saveAll(coreDatasourceRepository.findAll());
-    }
     @XpackInteract(value = "datasourceResourceTree", before = false)
     public CoreDatasource getCoreDatasource(Long id) {
+        CoreDatasource coreDatasource = new CoreDatasource();
         if (id == -1L) {
-            return engineManage.getDeEngine();
+            coreDatasource = engineManage.getDeEngine();
+        } else {
+            coreDatasource = coreDatasourceRepository.findById(id).get();
         }
-        return coreDatasourceRepository.findById(id).get();
+        coreDatasource.setConfiguration((String) EncryptUtils.aesDecrypt(coreDatasource.getConfiguration()));
+        return coreDatasource;
 
     }
 

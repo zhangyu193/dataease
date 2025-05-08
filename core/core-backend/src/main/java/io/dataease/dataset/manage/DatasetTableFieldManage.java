@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dataease.api.dataset.union.DatasetGroupInfoDTO;
 import io.dataease.dataset.dao.auto.entity.CoreDatasetTableField;
-import io.dataease.dataset.dao.auto.mapper.CoreDatasetTableFieldMapper;
+import io.dataease.dataset.dao.auto.mapper.CoreDatasetTableFieldRepository;
 import io.dataease.dataset.utils.DatasetUtils;
 import io.dataease.dataset.utils.TableUtils;
 import io.dataease.engine.constant.ExtFieldConstant;
@@ -26,7 +26,9 @@ import io.dataease.utils.JsonUtil;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.sql.ast.tree.predicate.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -41,7 +43,7 @@ import java.util.stream.Collectors;
 @Transactional
 public class DatasetTableFieldManage {
     @Resource
-    private CoreDatasetTableFieldMapper coreDatasetTableFieldMapper;
+    private CoreDatasetTableFieldRepository coreDatasetTableFieldRepository;
     @Resource
     private PermissionManage permissionManage;
     @Resource
@@ -55,22 +57,25 @@ public class DatasetTableFieldManage {
         checkNameLength(coreDatasetTableField.getName());
         if (ObjectUtils.isEmpty(coreDatasetTableField.getId())) {
             coreDatasetTableField.setId(IDUtils.snowID());
-            coreDatasetTableFieldMapper.insert(coreDatasetTableField);
+            coreDatasetTableFieldRepository.saveAndFlush(coreDatasetTableField);
         } else {
-            coreDatasetTableFieldMapper.updateById(coreDatasetTableField);
+            coreDatasetTableFieldRepository.saveAndFlush(coreDatasetTableField);
         }
     }
 
     public DatasetTableFieldDTO chartFieldSave(DatasetTableFieldDTO datasetTableFieldDTO) {
         checkNameLength(datasetTableFieldDTO.getName());
-        CoreDatasetTableField coreDatasetTableField = coreDatasetTableFieldMapper.selectById(datasetTableFieldDTO.getId());
-        QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
-        wrapper.eq("name", datasetTableFieldDTO.getName());
-        wrapper.eq("chart_id", datasetTableFieldDTO.getChartId());
-        if (ObjectUtils.isNotEmpty(coreDatasetTableField)) {
-            wrapper.ne("id", datasetTableFieldDTO.getId());
-        }
-        List<CoreDatasetTableField> fields = coreDatasetTableFieldMapper.selectList(wrapper);
+        CoreDatasetTableField coreDatasetTableField = coreDatasetTableFieldRepository.findById(datasetTableFieldDTO.getId()).orElse(null);
+        Specification<CoreDatasetTableField> spec = (root, query, cb) -> {
+            var predicates = cb.conjunction();
+            predicates.getExpressions().add(cb.equal(root.get("name"), datasetTableFieldDTO.getName()));
+            predicates.getExpressions().add(cb.equal(root.get("chartId"), datasetTableFieldDTO.getChartId()));
+            if (coreDatasetTableField != null && coreDatasetTableField.getId() != null) {
+                predicates.getExpressions().add(cb.notEqual(root.get("id"), datasetTableFieldDTO.getId()));
+            }
+            return predicates;
+        };
+        List<CoreDatasetTableField> fields = coreDatasetTableFieldRepository.findAll(spec);
         if (ObjectUtils.isNotEmpty(fields)) {
             DEException.throwException(Translator.get("i18n_field_name_duplicated"));
         }
@@ -86,7 +91,7 @@ public class DatasetTableFieldManage {
      */
     public DatasetTableFieldDTO save(DatasetTableFieldDTO datasetTableFieldDTO) {
         checkNameLength(datasetTableFieldDTO.getName());
-        CoreDatasetTableField coreDatasetTableField = coreDatasetTableFieldMapper.selectById(datasetTableFieldDTO.getId());
+        CoreDatasetTableField coreDatasetTableField = coreDatasetTableFieldRepository.findById(datasetTableFieldDTO.getId()).orElse(null);
         CoreDatasetTableField record = transDTO2Record(datasetTableFieldDTO);
         if (ObjectUtils.isEmpty(record.getDataeaseName())) {
             String n = TableUtils.fieldNameShort(record.getId() + "");
@@ -94,9 +99,9 @@ public class DatasetTableFieldManage {
             record.setDataeaseName(n);
         }
         if (ObjectUtils.isEmpty(coreDatasetTableField)) {
-            coreDatasetTableFieldMapper.insert(record);
+            coreDatasetTableFieldRepository.saveAndFlush(record);
         } else {
-            coreDatasetTableFieldMapper.updateById(record);
+            coreDatasetTableFieldRepository.saveAndFlush(record);
         }
         return datasetTableFieldDTO;
     }
@@ -106,89 +111,79 @@ public class DatasetTableFieldManage {
         if (ObjectUtils.isEmpty(datasetTableFieldDTO.getId())) {
             datasetTableFieldDTO.setId(IDUtils.snowID());
             BeanUtils.copyBean(record, datasetTableFieldDTO);
-            coreDatasetTableFieldMapper.insert(record);
+            coreDatasetTableFieldRepository.saveAndFlush(record);
         } else {
             BeanUtils.copyBean(record, datasetTableFieldDTO);
-            coreDatasetTableFieldMapper.updateById(record);
+            coreDatasetTableFieldRepository.saveAndFlush(record);
         }
         return datasetTableFieldDTO;
     }
 
     public List<DatasetTableFieldDTO> getChartCalcFields(Long chartId) {
-        QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
-        wrapper.eq("chart_id", chartId);
-        return transDTO(coreDatasetTableFieldMapper.selectList(wrapper));
+        return transDTO(coreDatasetTableFieldRepository.findByChartId(chartId));
     }
 
     public void deleteById(Long id) {
-        coreDatasetTableFieldMapper.deleteById(id);
+        coreDatasetTableFieldRepository.deleteById(id);
     }
 
     public void deleteByDatasetTableUpdate(Long datasetTableId, List<Long> fieldIds) {
         if (!CollectionUtils.isEmpty(fieldIds)) {
-            QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
-            wrapper.eq("dataset_table_id", datasetTableId);
-            wrapper.notIn("id", fieldIds);
-            coreDatasetTableFieldMapper.delete(wrapper);
+            coreDatasetTableFieldRepository.deleteByDatasetTableIdAndNotInFieldIds(datasetTableId, fieldIds);
         }
     }
 
     public void deleteByDatasetGroupUpdate(Long datasetGroupId, List<Long> fieldIds) {
         if (!CollectionUtils.isEmpty(fieldIds)) {
-            QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
-            wrapper.eq("dataset_group_id", datasetGroupId);
-            wrapper.notIn("id", fieldIds);
-            coreDatasetTableFieldMapper.delete(wrapper);
+            coreDatasetTableFieldRepository.deleteByDatasetGroupIdAndNotInFieldIds(datasetGroupId, fieldIds);
         }
     }
 
     public void deleteByDatasetGroupDelete(Long datasetGroupId) {
-        QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
-        wrapper.eq("dataset_group_id", datasetGroupId);
-        coreDatasetTableFieldMapper.delete(wrapper);
+        coreDatasetTableFieldRepository.deleteByDatasetGroupId(datasetGroupId);
     }
 
     public void deleteByChartId(Long chartId) {
-        QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
-        wrapper.eq("chart_id", chartId);
-        coreDatasetTableFieldMapper.delete(wrapper);
+        coreDatasetTableFieldRepository.deleteByChartId(chartId);
     }
 
     public List<DatasetTableFieldDTO> selectByDatasetTableId(Long id) {
-        QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
-        wrapper.eq("dataset_table_id", id);
-        return transDTO(coreDatasetTableFieldMapper.selectList(wrapper));
+        return transDTO(coreDatasetTableFieldRepository.findByDatasetTableId(id));
     }
 
     public List<DatasetTableFieldDTO> selectByDatasetGroupId(Long id) {
-        QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
-        wrapper.eq("dataset_group_id", id);
-        wrapper.eq("checked", true);
-        wrapper.isNull("chart_id");
-        return transDTO(coreDatasetTableFieldMapper.selectList(wrapper));
+        Specification<CoreDatasetTableField> spec = (root, query, cb) -> {
+            var predicates = cb.conjunction();
+            predicates.getExpressions().add(cb.equal(root.get("datasetGroupId"), id));
+            predicates.getExpressions().add(cb.isTrue(root.get("checked")));
+            predicates.getExpressions().add(cb.isNull(root.get("chartId")));
+            return predicates;
+        };
+        return transDTO(coreDatasetTableFieldRepository.findAll(spec));
     }
 
     public Map<String, List<DatasetTableFieldDTO>> selectByDatasetGroupIds(List<Long> ids) {
         Map<String, List<DatasetTableFieldDTO>> map = new HashMap<>();
         for (Long id : ids) {
-            QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
-            wrapper.eq("dataset_group_id", id);
-            wrapper.eq("checked", true);
-            wrapper.isNull("chart_id");
-            wrapper.eq("ext_field", 0);
-            map.put(String.valueOf(id), transDTO(coreDatasetTableFieldMapper.selectList(wrapper)));
+            Specification<CoreDatasetTableField> spec = (root, query, cb) -> {
+                var predicates = cb.conjunction();
+                predicates.getExpressions().add(cb.equal(root.get("datasetGroupId"), id));
+                predicates.getExpressions().add(cb.isTrue(root.get("checked")));
+                predicates.getExpressions().add(cb.isNull(root.get("chartId")));
+                predicates.getExpressions().add(cb.equal(root.get("extField"), 0));
+                return predicates;
+            };
+            map.put(String.valueOf(id), transDTO(coreDatasetTableFieldRepository.findAll(spec)));
         }
         return map;
     }
 
     public List<DatasetTableFieldDTO> selectByFieldIds(List<Long> ids) {
-        QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
-        wrapper.in("id", ids);
-        return transDTO(coreDatasetTableFieldMapper.selectList(wrapper));
+        return transDTO(coreDatasetTableFieldRepository.findAllById(ids));
     }
 
     public DatasetTableFieldDTO selectById(Long id) {
-        CoreDatasetTableField coreDatasetTableField = coreDatasetTableFieldMapper.selectById(id);
+        CoreDatasetTableField coreDatasetTableField = coreDatasetTableFieldRepository.findById(id).orElse(null);
         if (coreDatasetTableField == null) return null;
         return transObj(coreDatasetTableField);
     }
@@ -199,10 +194,13 @@ public class DatasetTableFieldManage {
      * @return
      */
     public Map<String, List<DatasetTableFieldDTO>> listByDQ(Long id) {
-        QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
-        wrapper.eq("dataset_group_id", id);
-        wrapper.eq("checked", true);
-        List<DatasetTableFieldDTO> list = transDTO(coreDatasetTableFieldMapper.selectList(wrapper));
+        Specification<CoreDatasetTableField> spec = (root, query, cb) -> {
+            var predicates = cb.conjunction();
+            predicates.getExpressions().add(cb.equal(root.get("datasetGroupId"), id));
+            predicates.getExpressions().add(cb.isTrue(root.get("checked")));
+            return predicates;
+        };
+        List<DatasetTableFieldDTO> list = transDTO(coreDatasetTableFieldRepository.findAll(spec));
         List<DatasetTableFieldDTO> dimensionList = list.stream().filter(ele -> StringUtils.equalsIgnoreCase(ele.getGroupType(), "d")).collect(Collectors.toList());
         List<DatasetTableFieldDTO> quotaList = list.stream().filter(ele -> StringUtils.equalsIgnoreCase(ele.getGroupType(), "q")).collect(Collectors.toList());
         Map<String, List<DatasetTableFieldDTO>> map = new LinkedHashMap<>();
@@ -222,13 +220,15 @@ public class DatasetTableFieldManage {
         if (!isCopilotSupport(dsMap)) {
             DEException.throwException(Translator.get("i18n_copilot_ds"));
         }
+        Specification<CoreDatasetTableField> spec = (root, query, cb) -> {
+            var predicates = cb.conjunction();
+            predicates.getExpressions().add(cb.equal(root.get("datasetGroupId"), id));
+            predicates.getExpressions().add(cb.isTrue(root.get("checked")));
+            predicates.getExpressions().add(cb.equal(root.get("extField"), 0));
+            return predicates;
+        };
 
-        QueryWrapper<CoreDatasetTableField> wrapper = new QueryWrapper<>();
-        wrapper.eq("dataset_group_id", id);
-        wrapper.eq("checked", true);
-        wrapper.eq("ext_field", 0);
-        List<DatasetTableFieldDTO> list = transDTO(coreDatasetTableFieldMapper.selectList(wrapper));
-
+        List<DatasetTableFieldDTO> list = transDTO(coreDatasetTableFieldRepository.findAll(spec));
         Map<String, ColumnPermissionItem> desensitizationList = new HashMap<>();
         list = permissionManage.filterColumnPermissions(list, desensitizationList, id, null);
 

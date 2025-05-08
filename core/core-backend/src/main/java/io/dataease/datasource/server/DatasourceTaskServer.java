@@ -7,14 +7,15 @@ import io.dataease.datasource.dao.auto.entity.CoreDatasource;
 import io.dataease.datasource.dao.auto.entity.CoreDatasourceTask;
 import io.dataease.datasource.dao.auto.entity.CoreDatasourceTaskLog;
 import io.dataease.datasource.dao.auto.mapper.CoreDatasourceTaskLogMapper;
-import io.dataease.datasource.dao.auto.mapper.CoreDatasourceTaskMapper;
+
 import io.dataease.datasource.dao.auto.repository.CoreDatasourceRepository;
+import io.dataease.datasource.dao.auto.repository.CoreDatasourceTaskRepository;
 import io.dataease.datasource.dto.CoreDatasourceTaskDTO;
 import io.dataease.datasource.dao.ext.mapper.ExtDatasourceTaskMapper;
 import io.dataease.datasource.manage.DatasourceSyncManage;
 import io.dataease.utils.IDUtils;
 import jakarta.annotation.Resource;
-import org.apache.commons.lang3.StringUtils;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Component;
@@ -27,7 +28,7 @@ import java.util.List;
 public class DatasourceTaskServer {
 
     @Resource
-    private CoreDatasourceTaskMapper datasourceTaskMapper;
+    private CoreDatasourceTaskRepository coreDatasourceTaskRepository;
     @Autowired
     private CoreDatasourceRepository coreDatasourceRepository;
     @Resource
@@ -39,17 +40,15 @@ public class DatasourceTaskServer {
 
 
     public CoreDatasourceTask selectById(Long taskId) {
-        return datasourceTaskMapper.selectById(taskId);
+        return coreDatasourceTaskRepository.findById(taskId).orElse(null);
     }
 
     public List<CoreDatasourceTask> listAll() {
-        return datasourceTaskMapper.selectList(null);
+        return coreDatasourceTaskRepository.findAll();
     }
 
     public CoreDatasourceTask selectByDSId(Long dsId) {
-        QueryWrapper<CoreDatasourceTask> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("ds_id", dsId);
-        List<CoreDatasourceTask> coreDatasourceTasks = datasourceTaskMapper.selectList(queryWrapper);
+        List<CoreDatasourceTask> coreDatasourceTasks = coreDatasourceTaskRepository.findByDsId(dsId);
         return CollectionUtils.isEmpty(coreDatasourceTasks) ? new CoreDatasourceTask() : coreDatasourceTasks.get(0);
     }
 
@@ -71,39 +70,36 @@ public class DatasourceTaskServer {
     public void deleteByDSId(Long dsId) {
         QueryWrapper<CoreDatasourceTask> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("ds_id", dsId);
-        List<CoreDatasourceTask> coreDatasourceTasks = datasourceTaskMapper.selectList(queryWrapper);
+        List<CoreDatasourceTask> coreDatasourceTasks = coreDatasourceTaskRepository.findByDsId(dsId);
         if (!CollectionUtils.isEmpty(coreDatasourceTasks)) {
             datasourceSyncManage.deleteSchedule(coreDatasourceTasks.get(0));
         }
-        datasourceTaskMapper.delete(queryWrapper);
+        coreDatasourceTaskRepository.deleteByDsId(dsId);
     }
 
     public void insert(CoreDatasourceTask coreDatasourceTask) {
         coreDatasourceTask.setId(IDUtils.snowID());
-        datasourceTaskMapper.insert(coreDatasourceTask);
+        coreDatasourceTaskRepository.saveAndFlush(coreDatasourceTask);
     }
 
     public void delete(Long id) {
-        datasourceTaskMapper.deleteById(id);
+        coreDatasourceTaskRepository.deleteById(id);
     }
 
     public void update(CoreDatasourceTask coreDatasourceTask) {
         if (coreDatasourceTask.getId() == null) {
-            datasourceTaskMapper.insert(coreDatasourceTask);
+            coreDatasourceTask.setId(IDUtils.snowID());
+            coreDatasourceTaskRepository.saveAndFlush(coreDatasourceTask);
         } else {
             UpdateWrapper<CoreDatasourceTask> updateWrapper = new UpdateWrapper<>();
             updateWrapper.eq("id", coreDatasourceTask.getId());
-            datasourceTaskMapper.updateById(coreDatasourceTask);
+            coreDatasourceTaskRepository.saveAndFlush(coreDatasourceTask);
         }
 
     }
 
     public void updateByDsIds(List<Long> dsIds) {
-        UpdateWrapper<CoreDatasourceTask> updateWrapper = new UpdateWrapper<>();
-        updateWrapper.in("ds_id", dsIds);
-        CoreDatasourceTask record = new CoreDatasourceTask();
-        record.setTaskStatus(TaskStatus.WaitingForExecution.name());
-        datasourceTaskMapper.update(record, updateWrapper);
+        coreDatasourceTaskRepository.updateTaskStatusByDsIds(dsIds, TaskStatus.WaitingForExecution.name());
     }
 
     public void checkTaskIsStopped(CoreDatasourceTask coreDatasourceTask) {
@@ -112,16 +108,11 @@ public class DatasourceTaskServer {
             if (CollectionUtils.isEmpty(dataSetTaskDTOS)) {
                 return;
             }
-            UpdateWrapper<CoreDatasourceTask> updateWrapper = new UpdateWrapper<>();
-            updateWrapper.eq("id", coreDatasourceTask.getId());
-            CoreDatasourceTask datasourceTask = new CoreDatasourceTask();
             if (dataSetTaskDTOS.get(0).getNextExecTime() == null || dataSetTaskDTOS.get(0).getNextExecTime() <= 0) {
-                datasourceTask.setTaskStatus(TaskStatus.Stopped.name());
-                datasourceTaskMapper.update(datasourceTask, updateWrapper);
+                coreDatasourceTaskRepository.updateTaskStatus(coreDatasourceTask.getId(), TaskStatus.Stopped.name());
             }
             if (dataSetTaskDTOS.get(0).getNextExecTime() != null && dataSetTaskDTOS.get(0).getNextExecTime() > coreDatasourceTask.getEndTime()) {
-                datasourceTask.setTaskStatus(TaskStatus.Stopped.name());
-                datasourceTaskMapper.update(datasourceTask, updateWrapper);
+                coreDatasourceTaskRepository.updateTaskStatus(coreDatasourceTask.getId(), TaskStatus.Stopped.name());
             }
         }
     }
@@ -140,12 +131,7 @@ public class DatasourceTaskServer {
 
         boolean existSyncTask = coreDatasourceRepository.exists(example);
         if (!existSyncTask) {
-            UpdateWrapper<CoreDatasourceTask> updateTaskWrapper = new UpdateWrapper<>();
-            updateTaskWrapper.eq("id", taskId);
-            CoreDatasourceTask record = new CoreDatasourceTask();
-            record.setTaskStatus(TaskStatus.UnderExecution.name());
-            record.setLastExecTime(System.currentTimeMillis());
-            datasourceTaskMapper.update(record, updateTaskWrapper);
+            coreDatasourceTaskRepository.updateTaskStatusAndLastExecTime(taskId, TaskStatus.UnderExecution.name(), System.currentTimeMillis());
         }
         return existSyncTask;
     }
@@ -189,10 +175,7 @@ public class DatasourceTaskServer {
                 record.setTaskStatus(TaskStatus.WaitingForExecution.name());
             }
         }
-
-        UpdateWrapper<CoreDatasourceTask> updateTaskWrapper = new UpdateWrapper<>();
-        updateTaskWrapper.eq("id", coreDatasourceTask.getId());
-        datasourceTaskMapper.update(record, updateTaskWrapper);
+        coreDatasourceTaskRepository.updateTaskStatus(coreDatasourceTask.getId(), record.getTaskStatus());
     }
 
     public void cleanLog() {

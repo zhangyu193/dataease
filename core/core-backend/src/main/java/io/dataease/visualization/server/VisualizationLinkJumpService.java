@@ -9,8 +9,6 @@ import io.dataease.api.visualization.response.VisualizationLinkJumpBaseResponse;
 import io.dataease.api.visualization.vo.VisualizationOutParamsJumpVO;
 import io.dataease.api.visualization.vo.VisualizationViewTableVO;
 import io.dataease.auth.DeLinkPermit;
-import io.dataease.chart.dao.auto.entity.CoreChartView;
-import io.dataease.chart.dao.auto.mapper.CoreChartViewMapper;
 import io.dataease.constant.CommonConstants;
 import io.dataease.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.dataease.utils.AuthUtils;
@@ -46,15 +44,6 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
     private ExtVisualizationLinkJumpMapper extVisualizationLinkJumpMapper;
 
     @Resource
-    private VisualizationLinkJumpMapper visualizationLinkJumpMapper;
-
-    @Resource
-    private VisualizationLinkJumpInfoMapper visualizationLinkJumpInfoMapper;
-
-    @Resource
-    private VisualizationLinkJumpTargetViewInfoMapper visualizationLinkJumpTargetViewInfoMapper;
-
-    @Resource
     private SnapshotVisualizationLinkJumpMapper snapshotVisualizationLinkJumpMapper;
 
     @Resource
@@ -64,11 +53,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
     private SnapshotVisualizationLinkJumpTargetViewInfoMapper snapshotVisualizationLinkJumpTargetViewInfoMapper;
 
     @Resource
-    private CoreChartViewMapper coreChartViewMapper;
-
-    @Resource
     private SnapshotCoreChartViewMapper snapshotCoreChartViewMapper;
-
 
     @Resource
     private DataVisualizationInfoMapper dataVisualizationInfoMapper;

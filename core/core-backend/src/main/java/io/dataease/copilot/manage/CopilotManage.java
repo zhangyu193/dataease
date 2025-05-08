@@ -7,7 +7,7 @@ import io.dataease.api.dataset.union.UnionDTO;
 import io.dataease.chart.utils.ChartDataBuild;
 import io.dataease.copilot.api.CopilotAPI;
 import io.dataease.dataset.dao.auto.entity.CoreDatasetGroup;
-import io.dataease.dataset.dao.auto.mapper.CoreDatasetGroupMapper;
+import io.dataease.dataset.dao.auto.mapper.CoreDatasetGroupRepository;
 import io.dataease.dataset.manage.DatasetDataManage;
 import io.dataease.dataset.manage.DatasetSQLManage;
 import io.dataease.dataset.manage.DatasetTableFieldManage;
@@ -54,7 +54,7 @@ public class CopilotManage {
     @Resource
     private DatasetSQLManage datasetSQLManage;
     @Resource
-    private CoreDatasetGroupMapper coreDatasetGroupMapper;
+    private CoreDatasetGroupRepository coreDatasetGroupRepository;
     @Resource
     private DatasetTableFieldManage datasetTableFieldManage;
     @Resource
@@ -78,7 +78,7 @@ public class CopilotManage {
     private String[] chartType = {"bar", "line", "pie"};
 
     public MsgDTO chat(MsgDTO msgDTO) throws Exception {
-        CoreDatasetGroup coreDatasetGroup = coreDatasetGroupMapper.selectById(msgDTO.getDatasetGroupId());
+        CoreDatasetGroup coreDatasetGroup = coreDatasetGroupRepository.findById(msgDTO.getDatasetGroupId()).orElse(null);
         if (coreDatasetGroup == null) {
             return null;
         }

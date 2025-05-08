@@ -1,164 +1,53 @@
 package io.dataease.datasource.dao.auto.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-import java.io.Serializable;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 
-/**
- * <p>
- * 
- * </p>
- *
- * @author fit2cloud
- * @since 2023-09-28
- */
-@TableName("core_datasource_task_log")
-public class CoreDatasourceTaskLog implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
-    /**
-     * 主键
-     */
-    @TableId(value = "id", type = IdType.AUTO)
+@Getter
+@Setter
+@Entity
+@Table(name = "core_datasource_task_log")
+public class CoreDatasourceTaskLog {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private Long id;
 
-    /**
-     * 数据源ID
-     */
+    @NotNull
+    @Column(name = "ds_id", nullable = false)
     private Long dsId;
 
-    /**
-     * 任务ID
-     */
+    @Column(name = "task_id")
     private Long taskId;
 
-    /**
-     * 开始时间
-     */
+    @Column(name = "start_time")
     private Long startTime;
 
-    /**
-     * 结束时间
-     */
+    @Column(name = "end_time")
     private Long endTime;
 
-    /**
-     * 执行状态
-     */
+    @Size(max = 50)
+    @NotNull
+    @Column(name = "task_status", nullable = false, length = 50)
     private String taskStatus;
 
-    /**
-     * 执行状态
-     */
+    @Size(max = 255)
+    @NotNull
+    @Column(name = "table_name", nullable = false)
     private String tableName;
 
-    /**
-     * 错误信息
-     */
+    @Lob
+    @Column(name = "info", length = 16777216)
     private String info;
 
-    /**
-     * 创建时间
-     */
+    @Column(name = "create_time")
     private Long createTime;
 
+    @Size(max = 45)
+    @Column(name = "trigger_type", length = 45)
     private String triggerType;
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getDsId() {
-        return dsId;
-    }
-
-    public void setDsId(Long dsId) {
-        this.dsId = dsId;
-    }
-
-    public Long getTaskId() {
-        return taskId;
-    }
-
-    public void setTaskId(Long taskId) {
-        this.taskId = taskId;
-    }
-
-    public Long getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(Long startTime) {
-        this.startTime = startTime;
-    }
-
-    public Long getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(Long endTime) {
-        this.endTime = endTime;
-    }
-
-    public String getTaskStatus() {
-        return taskStatus;
-    }
-
-    public void setTaskStatus(String taskStatus) {
-        this.taskStatus = taskStatus;
-    }
-
-    public String getTableName() {
-        return tableName;
-    }
-
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
-    }
-
-    public String getInfo() {
-        return info;
-    }
-
-    public void setInfo(String info) {
-        this.info = info;
-    }
-
-    public Long getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(Long createTime) {
-        this.createTime = createTime;
-    }
-
-    public String getTriggerType() {
-        return triggerType;
-    }
-
-    public void setTriggerType(String triggerType) {
-        this.triggerType = triggerType;
-    }
-
-    @Override
-    public String toString() {
-        return "CoreDatasourceTaskLog{" +
-        "id = " + id +
-        ", dsId = " + dsId +
-        ", taskId = " + taskId +
-        ", startTime = " + startTime +
-        ", endTime = " + endTime +
-        ", taskStatus = " + taskStatus +
-        ", tableName = " + tableName +
-        ", info = " + info +
-        ", createTime = " + createTime +
-        ", triggerType = " + triggerType +
-        "}";
-    }
 }

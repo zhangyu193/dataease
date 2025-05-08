@@ -1,0 +1,23 @@
+package io.dataease.chart.dao.auto.mapper;
+
+import io.dataease.chart.dao.auto.entity.CoreChartView;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+
+public interface CoreChartViewRepository extends JpaRepository<CoreChartView, Long>, JpaSpecificationExecutor<CoreChartView> {
+
+    @Query("SELECT COUNT(DISTINCT c.tableId) FROM CoreChartView c WHERE c.id IN :ids")
+    Long countDistinctTableIdByIdIn(List<String> ids);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM CoreChartView c WHERE c.sceneId = :sceneId AND c.id NOT IN :chartIds")
+    void deleteBySceneIdAndNotInIds(Long sceneId, List<Long> chartIds);
+
+}

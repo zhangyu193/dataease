@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dataease.api.dataset.union.DatasetGroupInfoDTO;
-import io.dataease.api.dataset.union.UnionDTO;
 import io.dataease.api.template.dto.TemplateManageFileDTO;
 import io.dataease.api.template.dto.VisualizationTemplateExtendDataDTO;
 import io.dataease.api.visualization.DataVisualizationApi;
@@ -15,7 +14,6 @@ import io.dataease.api.visualization.request.VisualizationWorkbranchQueryRequest
 import io.dataease.api.visualization.vo.*;
 import io.dataease.auth.DeLinkPermit;
 import io.dataease.chart.dao.auto.entity.CoreChartView;
-import io.dataease.chart.dao.auto.mapper.CoreChartViewMapper;
 import io.dataease.chart.dao.ext.mapper.ExtChartViewMapper;
 import io.dataease.chart.manage.ChartDataManage;
 import io.dataease.chart.manage.ChartViewManege;
@@ -26,9 +24,9 @@ import io.dataease.constant.LogOT;
 import io.dataease.dataset.dao.auto.entity.CoreDatasetGroup;
 import io.dataease.dataset.dao.auto.entity.CoreDatasetTable;
 import io.dataease.dataset.dao.auto.entity.CoreDatasetTableField;
-import io.dataease.dataset.dao.auto.mapper.CoreDatasetGroupMapper;
-import io.dataease.dataset.dao.auto.mapper.CoreDatasetTableFieldMapper;
-import io.dataease.dataset.dao.auto.mapper.CoreDatasetTableMapper;
+import io.dataease.dataset.dao.auto.mapper.CoreDatasetGroupRepository;
+import io.dataease.dataset.dao.auto.mapper.CoreDatasetTableFieldRepository;
+import io.dataease.dataset.dao.auto.mapper.CoreDatasetTableRepository;
 import io.dataease.dataset.manage.DatasetDataManage;
 import io.dataease.dataset.manage.DatasetGroupManage;
 import io.dataease.dataset.manage.DatasetSQLManage;
@@ -59,7 +57,6 @@ import io.dataease.visualization.dao.auto.entity.DataVisualizationInfo;
 import io.dataease.visualization.dao.auto.entity.SnapshotDataVisualizationInfo;
 import io.dataease.visualization.dao.auto.entity.VisualizationWatermark;
 import io.dataease.visualization.dao.auto.mapper.DataVisualizationInfoMapper;
-import io.dataease.visualization.dao.auto.mapper.SnapshotCoreChartViewMapper;
 import io.dataease.visualization.dao.auto.mapper.SnapshotDataVisualizationInfoMapper;
 import io.dataease.visualization.dao.auto.mapper.VisualizationWatermarkMapper;
 import io.dataease.visualization.dao.ext.mapper.ExtDataVisualizationMapper;
@@ -72,6 +69,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -92,8 +90,6 @@ public class DataVisualizationServer implements DataVisualizationApi {
 
     @Resource
     private ChartViewManege chartViewManege;
-    @Resource
-    private CoreChartViewMapper coreChartViewMapper;
 
     @Resource
     private ExtDataVisualizationMapper extDataVisualizationMapper;
@@ -132,13 +128,13 @@ public class DataVisualizationServer implements DataVisualizationApi {
     private ExtVisualizationTemplateMapper appTemplateMapper;
 
     @Resource
-    private CoreDatasetGroupMapper coreDatasetGroupMapper;
+    private CoreDatasetGroupRepository coreDatasetGroupRepository;
 
     @Resource
-    private CoreDatasetTableMapper coreDatasetTableMapper;
+    private CoreDatasetTableRepository coreDatasetTableRepository;
 
     @Resource
-    private CoreDatasetTableFieldMapper coreDatasetTableFieldMapper;
+    private CoreDatasetTableFieldRepository coreDatasetTableFieldRepository;
 
     @Autowired
     private CoreDatasourceRepository coreDatasourceRepository;
@@ -330,7 +326,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                     datasetTable.setDatasetGroupId(dsGroupIdMap.get(datasetTable.getDatasetGroupId()));
                     datasetTable.setId(newId);
                     datasetTable.setDatasourceId(datasourceIdMap.get(datasetTable.getDatasourceId()));
-                    coreDatasetTableMapper.insert(datasetTable);
+                    coreDatasetTableRepository.saveAndFlush(datasetTable);
                     dsTableIdMap.put(oldId, newId);
 
                 });
@@ -353,7 +349,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                     dsTableFieldsIdMap.forEach((key, value) -> {
                         dsTableFields.setOriginName(dsTableFields.getOriginName().replaceAll(key.toString(), value.toString()));
                     });
-                    coreDatasetTableFieldMapper.insert(dsTableFields);
+                    coreDatasetTableFieldRepository.saveAndFlush(dsTableFields);
                 });
 
                 List<String> dsGroupNameSave = new ArrayList<>();
@@ -387,8 +383,8 @@ public class DataVisualizationServer implements DataVisualizationApi {
                         dsGroup.setName(dsGroup.getName() + "-" + UUID.randomUUID().toString());
                     }
                     dsGroupNameSave.add(dsGroup.getName());
-                    if(dsGroup.getIsCross() == null){
-                        if(dsGroup.getUnion() == null){
+                    if (dsGroup.getIsCross() == null) {
+                        if (dsGroup.getUnion() == null) {
                             dsGroup.setUnion(JsonUtil.parseList(dsGroup.getInfo(), new TypeReference<>() {
                             }));
                         }
@@ -486,11 +482,14 @@ public class DataVisualizationServer implements DataVisualizationApi {
     public String appCanvasNameCheck(DataVisualizationBaseRequest request) throws Exception {
         Long datasetFolderPid = request.getDatasetFolderPid();
         String datasetFolderName = request.getDatasetFolderName();
-        QueryWrapper<CoreDatasetGroup> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("name", datasetFolderName);
-        queryWrapper.eq("pid", datasetFolderPid);
-        queryWrapper.eq("node_type", DataVisualizationConstants.NODE_TYPE.FOLDER);
-        if (coreDatasetGroupMapper.exists(queryWrapper)) {
+        Specification<CoreDatasetGroup> spec = (root, query, cb) -> {
+            var predicates = cb.conjunction();
+            predicates.getExpressions().add(cb.equal(root.get("pid"), datasetFolderPid));
+            predicates.getExpressions().add(cb.equal(root.get("name"), datasetFolderName));
+            predicates.getExpressions().add(cb.equal(root.get("nodeType"), DataVisualizationConstants.NODE_TYPE.FOLDER));
+            return predicates;
+        };
+        if (coreDatasetGroupRepository.exists(spec)) {
             return "repeat";
         } else {
             return "success";

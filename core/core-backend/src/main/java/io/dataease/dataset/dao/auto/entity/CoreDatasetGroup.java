@@ -1,248 +1,77 @@
 package io.dataease.dataset.dao.auto.entity;
 
-import com.baomidou.mybatisplus.annotation.TableName;
-import java.io.Serializable;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
-/**
- * <p>
- * 数据集分组表
- * </p>
- *
- * @author fit2cloud
- * @since 2025-04-14
- */
-@TableName("core_dataset_group")
-public class CoreDatasetGroup implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
-    /**
-     * ID
-     */
+@Getter
+@Setter
+@Entity
+@Table(name = "core_dataset_group")
+public class CoreDatasetGroup {
+    @Id
+    @Column(name = "id", nullable = false)
     private Long id;
 
-    /**
-     * 名称
-     */
+    @Size(max = 128)
+    @Column(name = "name", length = 128)
     private String name;
 
-    /**
-     * 父级ID
-     */
+    @Column(name = "pid")
     private Long pid;
 
-    /**
-     * 当前分组处于第几级
-     */
+    @ColumnDefault("0")
+    @Column(name = "level")
     private Integer level;
 
-    /**
-     * node类型：folder or dataset
-     */
+    @Size(max = 50)
+    @NotNull
+    @Column(name = "node_type", nullable = false, length = 50)
     private String nodeType;
 
-    /**
-     * sql,union
-     */
+    @Size(max = 50)
+    @Column(name = "type", length = 50)
     private String type;
 
-    /**
-     * 连接模式：0-直连，1-同步(包括excel、api等数据存在de中的表)
-     */
+    @ColumnDefault("0")
+    @Column(name = "mode")
     private Integer mode;
 
-    /**
-     * 关联关系树
-     */
+    @Lob
+    @Column(name = "info", length = 16777216)
     private String info;
 
-    /**
-     * 创建人ID
-     */
+    @Size(max = 50)
+    @Column(name = "create_by", length = 50)
     private String createBy;
 
-    /**
-     * 创建时间
-     */
+    @Column(name = "create_time")
     private Long createTime;
 
-    /**
-     * Quartz 实例 ID
-     */
+    @Size(max = 1024)
+    @Column(name = "qrtz_instance", length = 1024)
     private String qrtzInstance;
 
-    /**
-     * 同步状态
-     */
+    @Size(max = 45)
+    @Column(name = "sync_status", length = 45)
     private String syncStatus;
 
-    /**
-     * 更新人ID
-     */
+    @Size(max = 50)
+    @Column(name = "update_by", length = 50)
     private String updateBy;
 
-    /**
-     * 最后同步时间
-     */
+    @ColumnDefault("0")
+    @Column(name = "last_update_time")
     private Long lastUpdateTime;
 
-    /**
-     * 关联sql
-     */
+    @Lob
+    @Column(name = "union_sql", length = 16777216)
     private String unionSql;
 
-    /**
-     * 是否跨源
-     */
+    @Column(name = "is_cross")
     private Boolean isCross;
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Long getPid() {
-        return pid;
-    }
-
-    public void setPid(Long pid) {
-        this.pid = pid;
-    }
-
-    public Integer getLevel() {
-        return level;
-    }
-
-    public void setLevel(Integer level) {
-        this.level = level;
-    }
-
-    public String getNodeType() {
-        return nodeType;
-    }
-
-    public void setNodeType(String nodeType) {
-        this.nodeType = nodeType;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public Integer getMode() {
-        return mode;
-    }
-
-    public void setMode(Integer mode) {
-        this.mode = mode;
-    }
-
-    public String getInfo() {
-        return info;
-    }
-
-    public void setInfo(String info) {
-        this.info = info;
-    }
-
-    public String getCreateBy() {
-        return createBy;
-    }
-
-    public void setCreateBy(String createBy) {
-        this.createBy = createBy;
-    }
-
-    public Long getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(Long createTime) {
-        this.createTime = createTime;
-    }
-
-    public String getQrtzInstance() {
-        return qrtzInstance;
-    }
-
-    public void setQrtzInstance(String qrtzInstance) {
-        this.qrtzInstance = qrtzInstance;
-    }
-
-    public String getSyncStatus() {
-        return syncStatus;
-    }
-
-    public void setSyncStatus(String syncStatus) {
-        this.syncStatus = syncStatus;
-    }
-
-    public String getUpdateBy() {
-        return updateBy;
-    }
-
-    public void setUpdateBy(String updateBy) {
-        this.updateBy = updateBy;
-    }
-
-    public Long getLastUpdateTime() {
-        return lastUpdateTime;
-    }
-
-    public void setLastUpdateTime(Long lastUpdateTime) {
-        this.lastUpdateTime = lastUpdateTime;
-    }
-
-    public String getUnionSql() {
-        return unionSql;
-    }
-
-    public void setUnionSql(String unionSql) {
-        this.unionSql = unionSql;
-    }
-
-    public Boolean getIsCross() {
-        return isCross;
-    }
-
-    public void setIsCross(Boolean isCross) {
-        this.isCross = isCross;
-    }
-
-    @Override
-    public String toString() {
-        return "CoreDatasetGroup{" +
-        "id = " + id +
-        ", name = " + name +
-        ", pid = " + pid +
-        ", level = " + level +
-        ", nodeType = " + nodeType +
-        ", type = " + type +
-        ", mode = " + mode +
-        ", info = " + info +
-        ", createBy = " + createBy +
-        ", createTime = " + createTime +
-        ", qrtzInstance = " + qrtzInstance +
-        ", syncStatus = " + syncStatus +
-        ", updateBy = " + updateBy +
-        ", lastUpdateTime = " + lastUpdateTime +
-        ", unionSql = " + unionSql +
-        ", isCross = " + isCross +
-        "}";
-    }
 }
