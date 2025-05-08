@@ -49,7 +49,6 @@ public class DeStandaloneVersion {
     private String installedBy;
 
     @NotNull
-    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "installed_on", nullable = false)
     private Instant installedOn;
 
