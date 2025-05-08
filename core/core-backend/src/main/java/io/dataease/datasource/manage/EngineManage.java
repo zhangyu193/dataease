@@ -3,8 +3,8 @@ package io.dataease.datasource.manage;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import io.dataease.datasource.dao.auto.entity.CoreDatasource;
 import io.dataease.datasource.dao.auto.entity.CoreDeEngine;
-import io.dataease.datasource.dao.auto.mapper.CoreDeEngineMapper;
 import io.dataease.datasource.dao.auto.repository.CoreDatasourceRepository;
+import io.dataease.datasource.dao.auto.repository.CoreDeEngineRepository;
 import io.dataease.datasource.type.H2;
 import io.dataease.datasource.type.Mysql;
 import io.dataease.exception.DEException;
@@ -15,20 +15,24 @@ import io.dataease.result.ResultMessage;
 import io.dataease.template.dao.auto.entity.DeTemplateVersion;
 import io.dataease.template.dao.auto.mapper.DeTemplateVersionMapper;
 import io.dataease.utils.BeanUtils;
+import io.dataease.utils.IDUtils;
 import io.dataease.utils.JsonUtil;
 import io.dataease.utils.ModelUtils;
 import jakarta.annotation.Resource;
+import jakarta.persistence.criteria.Predicate;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Example;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +45,7 @@ public class EngineManage {
     @Resource
     private Environment env;
     @Resource
-    private CoreDeEngineMapper deEngineMapper;
+    private CoreDeEngineRepository coreDeEngineRepository;
     @Autowired
     private CoreDatasourceRepository coreDatasourceRepository;
 
@@ -53,7 +57,7 @@ public class EngineManage {
 
 
     public CoreDeEngine info() throws DEException {
-        List<CoreDeEngine> deEngines = deEngineMapper.selectList(null);
+        List<CoreDeEngine> deEngines = coreDeEngineRepository.findAll();
         if (CollectionUtils.isEmpty(deEngines)) {
             DEException.throwException("未完整设置数据引擎");
         }
@@ -61,7 +65,7 @@ public class EngineManage {
     }
 
     public CoreDatasource getDeEngine() {
-        List<CoreDeEngine> deEngines = deEngineMapper.selectList(null);
+        List<CoreDeEngine> deEngines = coreDeEngineRepository.findAll();
         if (CollectionUtils.isEmpty(deEngines)) {
             DEException.throwException("未完整设置数据引擎");
         }
@@ -72,7 +76,7 @@ public class EngineManage {
 
 
     public CoreDatasource deEngine() {
-        List<CoreDeEngine> deEngines = deEngineMapper.selectList(null);
+        List<CoreDeEngine> deEngines = coreDeEngineRepository.findAll();
         CoreDatasource coreDatasource = new CoreDatasource();
         if (CollectionUtils.isEmpty(deEngines)) {
             return null;
@@ -99,26 +103,29 @@ public class EngineManage {
 
     public ResultMessage save(CoreDeEngine engine) throws Exception {
         if (engine.getId() == null) {
-            deEngineMapper.insert(engine);
+            engine.setId(IDUtils.snowID());
+            coreDeEngineRepository.saveAndFlush(engine);
         } else {
-            deEngineMapper.updateById(engine);
+            coreDeEngineRepository.saveAndFlush(engine);
         }
         return ResultMessage.success(engine);
     }
 
     public void initSimpleEngine() throws Exception {
         initLocalDataSource();
-        QueryWrapper<CoreDeEngine> queryWrapper = new QueryWrapper<>();
-        if (ModelUtils.isDesktop()) {
-            queryWrapper.eq("type", engineType.h2.name());
-        } else {
-            queryWrapper.eq("type", engineType.mysql.name());
-        }
-        List<CoreDeEngine> deEngines = deEngineMapper.selectList(queryWrapper);
+        Specification<CoreDeEngine> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (ModelUtils.isDesktop()) {
+                predicates.add(criteriaBuilder.equal(root.get("type"), engineType.h2.name()));
+            } else {
+                predicates.add(criteriaBuilder.equal(root.get("type"), engineType.mysql.name()));
+            }
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+        List<CoreDeEngine> deEngines = coreDeEngineRepository.findAll(spec);
         if (!CollectionUtils.isEmpty(deEngines)) {
             return;
         }
-
         CoreDeEngine engine = new CoreDeEngine();
         if (ModelUtils.isDesktop()) {
             engine.setType(engineType.h2.name());
@@ -149,7 +156,7 @@ public class EngineManage {
         }
         engine.setName("默认引擎");
         engine.setDescription("默认引擎");
-        deEngineMapper.insert(engine);
+        coreDeEngineRepository.saveAndFlush(engine);
     }
 
 

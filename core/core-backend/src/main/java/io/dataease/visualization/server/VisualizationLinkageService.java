@@ -35,13 +35,13 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
     private ExtVisualizationLinkageMapper extVisualizationLinkageMapper;
 
     @Resource
-    private SnapshotVisualizationLinkageFieldMapper snapshotVisualizationLinkageFieldMapper;
+    private SnapshotVisualizationLinkageFieldRepository snapshotVisualizationLinkageFieldRepository;
 
     @Resource
-    private SnapshotVisualizationLinkageMapper snapshotVisualizationLinkageMapper;
+    private SnapshotVisualizationLinkageRepository snapshotVisualizationLinkageRepository;
 
     @Resource
-    private SnapshotCoreChartViewMapper snapshotCoreChartViewMapper;
+    private SnapshotCoreChartViewRepository snapshotCoreChartViewRepository;
 
     @Override
     public Map<String, VisualizationLinkageDTO> getViewLinkageGather(VisualizationLinkageRequest request) {
@@ -50,7 +50,7 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
             if (CommonConstants.RESOURCE_TABLE.SNAPSHOT.equals(request.getResourceTable())) {
                 linkageDTOList = extVisualizationLinkageMapper.getViewLinkageGatherSnapshot(request.getDvId(), request.getSourceViewId(), request.getTargetViewIds());
             } else {
-                linkageDTOList =  extVisualizationLinkageMapper.getViewLinkageGather(request.getDvId(), request.getSourceViewId(), request.getTargetViewIds());
+                linkageDTOList = extVisualizationLinkageMapper.getViewLinkageGather(request.getDvId(), request.getSourceViewId(), request.getTargetViewIds());
             }
             return linkageDTOList.stream().collect(Collectors.toMap(targetViewId -> String.valueOf(targetViewId), PanelViewLinkageDTO -> PanelViewLinkageDTO));
         }
@@ -98,14 +98,14 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
             linkage.setUpdatePeople("");
             linkage.setUpdateTime(updateTime);
             linkage.setLinkageActive(linkageDTO.getLinkageActive());
-            snapshotVisualizationLinkageMapper.insert(linkage);
+            snapshotVisualizationLinkageRepository.saveAndFlush(linkage);
             if (CollectionUtils.isNotEmpty(linkageFields) && linkageDTO.getLinkageActive()) {
                 linkageFields.forEach(linkageField -> {
                     linkageField.setId(IDUtils.snowID());
                     linkageField.setLinkageId(linkageId);
                     linkageField.setUpdateTime(updateTime);
                     SnapshotVisualizationLinkageField fieldInsert = new SnapshotVisualizationLinkageField();
-                    snapshotVisualizationLinkageFieldMapper.insert(BeanUtils.copyBean(fieldInsert, linkageField));
+                    snapshotVisualizationLinkageFieldRepository.saveAndFlush(BeanUtils.copyBean(fieldInsert, linkageField));
                 });
             }
         }
@@ -118,7 +118,7 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
         List<LinkageInfoDTO> info = null;
         if (CommonConstants.RESOURCE_TABLE.SNAPSHOT.equals(resourceTable)) {
             info = extVisualizationLinkageMapper.getPanelAllLinkageInfoSnapshot(dvId);
-        }else{
+        } else {
             info = extVisualizationLinkageMapper.getPanelAllLinkageInfo(dvId);
         }
         return Optional.ofNullable(info).orElse(new ArrayList<>()).stream().collect(Collectors.toMap(LinkageInfoDTO::getSourceInfo, LinkageInfoDTO::getTargetInfoList));
@@ -129,8 +129,8 @@ public class VisualizationLinkageService implements VisualizationLinkageApi {
         SnapshotCoreChartView coreChartView = new SnapshotCoreChartView();
         coreChartView.setId(request.getSourceViewId());
         coreChartView.setLinkageActive(request.getActiveStatus());
-        snapshotCoreChartViewMapper.updateById(coreChartView);
-        return getVisualizationAllLinkageInfo(request.getDvId(),CommonConstants.RESOURCE_TABLE.SNAPSHOT);
+        snapshotCoreChartViewRepository.saveAndFlush(coreChartView);
+        return getVisualizationAllLinkageInfo(request.getDvId(), CommonConstants.RESOURCE_TABLE.SNAPSHOT);
     }
 
     @Override

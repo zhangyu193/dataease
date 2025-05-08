@@ -1,90 +1,36 @@
 package io.dataease.rsa.dao.entity;
 
-import com.baomidou.mybatisplus.annotation.TableName;
-import java.io.Serializable;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 
-/**
- * <p>
- * 
- * </p>
- *
- * @author fit2cloud
- * @since 2023-04-03
- */
-@TableName("core_rsa")
-public class CoreRsa implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
-    /**
-     * 主键
-     */
+@Getter
+@Setter
+@Entity
+@Table(name = "core_rsa")
+public class CoreRsa {
+    @Id
+    @Column(name = "id", nullable = false)
     private Integer id;
 
-    /**
-     * 私钥
-     */
+    @NotNull
+    @Lob
+    @Column(name = "private_key", nullable = false, length = 16777216)
     private String privateKey;
 
-    /**
-     * 公钥
-     */
+    @NotNull
+    @Lob
+    @Column(name = "public_key", nullable = false, length = 16777216)
     private String publicKey;
 
-    private String aesKey;
-
-    /**
-     * 生成时间
-     */
+    @NotNull
+    @Column(name = "create_time", nullable = false)
     private Long createTime;
 
-    public Integer getId() {
-        return id;
-    }
+    @NotNull
+    @Lob
+    @Column(name = "aes_key", nullable = false, length = 16777216)
+    private String aesKey;
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getPrivateKey() {
-        return privateKey;
-    }
-
-    public void setPrivateKey(String privateKey) {
-        this.privateKey = privateKey;
-    }
-
-    public String getPublicKey() {
-        return publicKey;
-    }
-
-    public void setPublicKey(String publicKey) {
-        this.publicKey = publicKey;
-    }
-
-    public Long getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(Long createTime) {
-        this.createTime = createTime;
-    }
-
-    public String getAesKey() {
-        return aesKey;
-    }
-
-    public void setAesKey(String aesKey) {
-        this.aesKey = aesKey;
-    }
-
-    @Override
-    public String toString() {
-        return "CoreRsa{" +
-        "id = " + id +
-        ", privateKey = " + privateKey +
-        ", publicKey = " + publicKey +
-        ", createTime = " + createTime +
-        "}";
-    }
 }

@@ -18,7 +18,7 @@ public interface CoreDatasetTableFieldRepository extends JpaRepository<CoreDatas
 
     List<CoreDatasetTableField> findByDatasetTableId(Long datasetTableId);
 
-    void deleteByChartId(  Long chartId);
+    void deleteByChartId(Long chartId);
 
     List<CoreDatasetTableField> findByDatasetGroupIdIn(List<Long> tableIds);
 

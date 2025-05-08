@@ -12,7 +12,6 @@ import lombok.Setter;
 @Table(name = "core_datasource_task_log")
 public class CoreDatasourceTaskLog {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 

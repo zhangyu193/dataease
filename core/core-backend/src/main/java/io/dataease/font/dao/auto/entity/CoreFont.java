@@ -1,144 +1,54 @@
 package io.dataease.font.dao.auto.entity;
 
-import com.baomidou.mybatisplus.annotation.TableName;
-import java.io.Serializable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
-/**
- * <p>
- * 
- * </p>
- *
- * @author fit2cloud
- * @since 2024-08-28
- */
-@TableName("core_font")
-public class CoreFont implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
-    /**
-     * ID
-     */
+@Getter
+@Setter
+@Entity
+@Table(name = "core_font")
+public class CoreFont {
+    @Id
+    @Column(name = "id", nullable = false)
     private Long id;
 
-    /**
-     * 字体名称
-     */
+    @Size(max = 255)
+    @NotNull
+    @Column(name = "name", nullable = false)
     private String name;
 
-    /**
-     * 文件名称
-     */
+    @Size(max = 255)
+    @Column(name = "file_name")
     private String fileName;
 
-    /**
-     * 文件转换名称
-     */
+    @Size(max = 255)
+    @Column(name = "file_trans_name")
     private String fileTransName;
 
-    /**
-     * 是否默认
-     */
+    @ColumnDefault("0")
+    @Column(name = "is_default")
     private Boolean isDefault;
 
-    /**
-     * 更新时间
-     */
+    @NotNull
+    @Column(name = "update_time", nullable = false)
     private Long updateTime;
 
-    /**
-     * 是否内置
-     */
+    @ColumnDefault("0")
+    @Column(name = "is_BuiltIn")
     private Boolean isBuiltin;
 
+    @Column(name = "size")
     private Double size;
 
+    @Size(max = 255)
+    @Column(name = "size_type")
     private String sizeType;
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getFileName() {
-        return fileName;
-    }
-
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
-    }
-
-    public String getFileTransName() {
-        return fileTransName;
-    }
-
-    public void setFileTransName(String fileTransName) {
-        this.fileTransName = fileTransName;
-    }
-
-    public Boolean getIsDefault() {
-        return isDefault;
-    }
-
-    public void setIsDefault(Boolean isDefault) {
-        this.isDefault = isDefault;
-    }
-
-    public Long getUpdateTime() {
-        return updateTime;
-    }
-
-    public void setUpdateTime(Long updateTime) {
-        this.updateTime = updateTime;
-    }
-
-    public Boolean getIsBuiltin() {
-        return isBuiltin;
-    }
-
-    public void setIsBuiltin(Boolean isBuiltin) {
-        this.isBuiltin = isBuiltin;
-    }
-
-    public Double getSize() {
-        return size;
-    }
-
-    public void setSize(Double size) {
-        this.size = size;
-    }
-
-    public String getSizeType() {
-        return sizeType;
-    }
-
-    public void setSizeType(String sizeType) {
-        this.sizeType = sizeType;
-    }
-
-    @Override
-    public String toString() {
-        return "CoreFont{" +
-        "id = " + id +
-        ", name = " + name +
-        ", fileName = " + fileName +
-        ", fileTransName = " + fileTransName +
-        ", isDefault = " + isDefault +
-        ", updateTime = " + updateTime +
-        ", isBuiltin = " + isBuiltin +
-        ", size = " + size +
-        ", sizeType = " + sizeType +
-        "}";
-    }
 }

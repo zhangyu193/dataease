@@ -44,19 +44,19 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
     private ExtVisualizationLinkJumpMapper extVisualizationLinkJumpMapper;
 
     @Resource
-    private SnapshotVisualizationLinkJumpMapper snapshotVisualizationLinkJumpMapper;
+    private SnapshotVisualizationLinkJumpRepository snapshotVisualizationLinkJumpRepository;
 
     @Resource
-    private SnapshotVisualizationLinkJumpInfoMapper snapshotVisualizationLinkJumpInfoMapper;
+    private SnapshotVisualizationLinkJumpInfoRepository snapshotVisualizationLinkJumpInfoRepository;
 
     @Resource
-    private SnapshotVisualizationLinkJumpTargetViewInfoMapper snapshotVisualizationLinkJumpTargetViewInfoMapper;
+    private SnapshotVisualizationLinkJumpTargetViewInfoRepository snapshotVisualizationLinkJumpTargetViewInfoRepository;
 
     @Resource
-    private SnapshotCoreChartViewMapper snapshotCoreChartViewMapper;
+    private SnapshotCoreChartViewRepository snapshotCoreChartViewRepository;
 
     @Resource
-    private DataVisualizationInfoMapper dataVisualizationInfoMapper;
+    private DataVisualizationInfoRepository dataVisualizationInfoMapper;
 
     @Override
     public List<DatasetTableFieldDTO> getTableFieldWithViewId(Long viewId) {
@@ -118,21 +118,21 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
         jumpDTO.setId(linkJumpId);
         SnapshotVisualizationLinkJump insertParam = new SnapshotVisualizationLinkJump();
         BeanUtils.copyBean(insertParam, jumpDTO);
-        snapshotVisualizationLinkJumpMapper.insert(insertParam);
+        snapshotVisualizationLinkJumpRepository.saveAndFlush(insertParam);
         Optional.ofNullable(jumpDTO.getLinkJumpInfoArray()).orElse(new ArrayList<>()).forEach(linkJumpInfo -> {
             Long linkJumpInfoId = IDUtils.snowID();
             linkJumpInfo.setId(linkJumpInfoId);
             linkJumpInfo.setLinkJumpId(linkJumpId);
             SnapshotVisualizationLinkJumpInfo insertJumpInfoParam = new SnapshotVisualizationLinkJumpInfo();
             BeanUtils.copyBean(insertJumpInfoParam, linkJumpInfo);
-            snapshotVisualizationLinkJumpInfoMapper.insert(insertJumpInfoParam);
+            snapshotVisualizationLinkJumpInfoRepository.saveAndFlush(insertJumpInfoParam);
             Optional.ofNullable(linkJumpInfo.getTargetViewInfoList()).orElse(new ArrayList<>()).forEach(targetViewInfo -> {
                 Long targetViewInfoId = IDUtils.snowID();
                 targetViewInfo.setTargetId(targetViewInfoId);
                 targetViewInfo.setLinkJumpInfoId(linkJumpInfoId);
                 SnapshotVisualizationLinkJumpTargetViewInfo insertTargetViewInfoParam = new SnapshotVisualizationLinkJumpTargetViewInfo();
                 BeanUtils.copyBean(insertTargetViewInfoParam, targetViewInfo);
-                snapshotVisualizationLinkJumpTargetViewInfoMapper.insert(insertTargetViewInfoParam);
+                snapshotVisualizationLinkJumpTargetViewInfoRepository.saveAndFlush(insertTargetViewInfoParam);
             });
         });
     }
@@ -151,7 +151,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
 
     @Override
     public VisualizationComponentDTO viewTableDetailList(Long dvId) {
-        DataVisualizationInfo dvInfo = dataVisualizationInfoMapper.selectById(dvId);
+        DataVisualizationInfo dvInfo = dataVisualizationInfoMapper.findById(String.valueOf(dvId)).orElse(null);
         List<VisualizationViewTableVO> result;
         List<VisualizationOutParamsJumpVO> outParamsJumpInfo;
         String componentData;
@@ -173,7 +173,7 @@ public class VisualizationLinkJumpService implements VisualizationLinkJumpApi {
         SnapshotCoreChartView coreChartView = new SnapshotCoreChartView();
         coreChartView.setId(Long.valueOf(request.getSourceViewId()));
         coreChartView.setJumpActive(request.getActiveStatus());
-        snapshotCoreChartViewMapper.updateById(coreChartView);
+        snapshotCoreChartViewRepository.saveAndFlush(coreChartView);
         return queryVisualizationJumpInfo(request.getSourceDvId(), CommonConstants.RESOURCE_TABLE.SNAPSHOT);
     }
 

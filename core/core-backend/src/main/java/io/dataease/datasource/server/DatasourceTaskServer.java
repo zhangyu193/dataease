@@ -3,12 +3,14 @@ package io.dataease.datasource.server;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import io.dataease.commons.constants.TaskStatus;
+import io.dataease.dataset.dao.auto.entity.CoreDatasetGroup;
 import io.dataease.datasource.dao.auto.entity.CoreDatasource;
 import io.dataease.datasource.dao.auto.entity.CoreDatasourceTask;
 import io.dataease.datasource.dao.auto.entity.CoreDatasourceTaskLog;
-import io.dataease.datasource.dao.auto.mapper.CoreDatasourceTaskLogMapper;
+
 
 import io.dataease.datasource.dao.auto.repository.CoreDatasourceRepository;
+import io.dataease.datasource.dao.auto.repository.CoreDatasourceTaskLogRepository;
 import io.dataease.datasource.dao.auto.repository.CoreDatasourceTaskRepository;
 import io.dataease.datasource.dto.CoreDatasourceTaskDTO;
 import io.dataease.datasource.dao.ext.mapper.ExtDatasourceTaskMapper;
@@ -16,8 +18,14 @@ import io.dataease.datasource.manage.DatasourceSyncManage;
 import io.dataease.utils.IDUtils;
 import jakarta.annotation.Resource;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
+import org.hibernate.sql.ast.tree.predicate.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -34,7 +42,7 @@ public class DatasourceTaskServer {
     @Resource
     private ExtDatasourceTaskMapper extDatasourceTaskMapper;
     @Resource
-    private CoreDatasourceTaskLogMapper coreDatasourceTaskLogMapper;
+    private CoreDatasourceTaskLogRepository coreDatasourceTaskLogRepository;
     @Resource
     private DatasourceSyncManage datasourceSyncManage;
 
@@ -53,13 +61,16 @@ public class DatasourceTaskServer {
     }
 
     public CoreDatasourceTaskLog lastSyncLogForTable(Long dsId, String tableName) {
-        List<CoreDatasourceTaskLog> coreDatasourceTaskLogs = new ArrayList<>();
-        QueryWrapper<CoreDatasourceTaskLog> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("ds_id", dsId);
-        queryWrapper.eq("table_name", tableName);
-        queryWrapper.orderByDesc("start_time");
-        queryWrapper.last("limit 1");
-        List<CoreDatasourceTaskLog> logs = coreDatasourceTaskLogMapper.selectList(queryWrapper);
+        Specification<CoreDatasourceTaskLog> spec = (root, query, cb) -> {
+            var predicates = cb.conjunction();
+            predicates.getExpressions().add(cb.equal(root.get("dsId"), dsId));
+            if (tableName != null) {
+                predicates.getExpressions().add(cb.equal(root.get("tableName"), tableName));
+            }
+            query.orderBy(cb.desc(root.get("startTime")));
+            return predicates;
+        };
+        List<CoreDatasourceTaskLog> logs = coreDatasourceTaskLogRepository.findAll(spec, PageRequest.of(0, 1)).getContent();
         if (!CollectionUtils.isEmpty(logs)) {
             return logs.get(0);
         } else {
@@ -148,12 +159,12 @@ public class DatasourceTaskServer {
         coreDatasourceTaskLog.setCreateTime(startTime);
         coreDatasourceTaskLog.setTableName(tableName);
         coreDatasourceTaskLog.setInfo("");
-        coreDatasourceTaskLogMapper.insert(coreDatasourceTaskLog);
+        coreDatasourceTaskLogRepository.saveAndFlush(coreDatasourceTaskLog);
         return coreDatasourceTaskLog;
     }
 
     public void saveLog(CoreDatasourceTaskLog coreDatasourceTaskLog) {
-        coreDatasourceTaskLogMapper.updateById(coreDatasourceTaskLog);
+        coreDatasourceTaskLogRepository.saveAndFlush(coreDatasourceTaskLog);
     }
 
     public void updateTaskStatus(CoreDatasourceTask coreDatasourceTask) {
@@ -181,9 +192,7 @@ public class DatasourceTaskServer {
     public void cleanLog() {
         long expTime = Long.parseLong("30") * 24L * 3600L * 1000L;
         long threshold = System.currentTimeMillis() - expTime;
-        QueryWrapper<CoreDatasourceTaskLog> queryWrapper = new QueryWrapper<>();
-        queryWrapper.lt("start_time", threshold);
-        coreDatasourceTaskLogMapper.delete(queryWrapper);
+        coreDatasourceTaskLogRepository.deleteByStartTimeLessThan(threshold);
     }
 
 

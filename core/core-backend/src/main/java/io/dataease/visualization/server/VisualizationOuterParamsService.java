@@ -1,6 +1,5 @@
 package io.dataease.visualization.server;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dataease.api.dataset.vo.CoreDatasetGroupVO;
 import io.dataease.api.dataset.vo.CoreDatasetTableFieldVO;
@@ -41,11 +40,11 @@ public class VisualizationOuterParamsService implements VisualizationOuterParams
     @Resource
     private ExtVisualizationOuterParamsMapper extOuterParamsMapper;
     @Resource
-    private SnapshotVisualizationOuterParamsMapper snapshotOuterParamsMapper;
+    private SnapshotVisualizationOuterParamsRepository snapshotVisualizationOuterParamsRepository;
     @Resource
-    private SnapshotVisualizationOuterParamsInfoMapper snapshotOuterParamsInfoMapper;
+    private SnapshotVisualizationOuterParamsInfoRepository snapshotVisualizationOuterParamsInfoRepository;
     @Resource
-    private SnapshotVisualizationOuterParamsTargetViewInfoMapper snapshotOuterParamsTargetViewInfoMapper;
+    private SnapshotVisualizationOuterParamsTargetViewInfoRepository snapshotVisualizationOuterParamsTargetViewInfoRepository;
     @Resource
     private CoreDatasetTableRepository coreDatasetTableRepository;
     @Autowired
@@ -80,7 +79,7 @@ public class VisualizationOuterParamsService implements VisualizationOuterParams
         outerParamsDTO.setParamsId(paramsId);
         SnapshotVisualizationOuterParams newOuterParams = new SnapshotVisualizationOuterParams();
         BeanUtils.copyBean(newOuterParams, outerParamsDTO);
-        snapshotOuterParamsMapper.insert(newOuterParams);
+        snapshotVisualizationOuterParamsRepository.saveAndFlush(newOuterParams);
         Map<String, String> finalParamsInfoNameIdMap = paramsInfoNameIdMap;
         Optional.ofNullable(outerParamsDTO.getOuterParamsInfoArray()).orElse(new ArrayList<>()).forEach(outerParamsInfo -> {
             String paramsInfoId = finalParamsInfoNameIdMap.get(outerParamsInfo.getParamName());
@@ -91,7 +90,7 @@ public class VisualizationOuterParamsService implements VisualizationOuterParams
             outerParamsInfo.setParamsId(paramsId);
             SnapshotVisualizationOuterParamsInfo newOuterParamsInfo = new SnapshotVisualizationOuterParamsInfo();
             BeanUtils.copyBean(newOuterParamsInfo, outerParamsInfo);
-            snapshotOuterParamsInfoMapper.insert(newOuterParamsInfo);
+            snapshotVisualizationOuterParamsInfoRepository.saveAndFlush(newOuterParamsInfo);
             String finalParamsInfoId = paramsInfoId;
             Optional.ofNullable(outerParamsInfo.getTargetViewInfoList()).orElse(new ArrayList<>()).forEach(targetViewInfo -> {
                 String targetViewInfoId = UUID.randomUUID().toString();
@@ -99,7 +98,7 @@ public class VisualizationOuterParamsService implements VisualizationOuterParams
                 targetViewInfo.setParamsInfoId(finalParamsInfoId);
                 SnapshotVisualizationOuterParamsTargetViewInfo newOuterParamsTargetViewInfo = new SnapshotVisualizationOuterParamsTargetViewInfo();
                 BeanUtils.copyBean(newOuterParamsTargetViewInfo, targetViewInfo);
-                snapshotOuterParamsTargetViewInfoMapper.insert(newOuterParamsTargetViewInfo);
+                snapshotVisualizationOuterParamsTargetViewInfoRepository.saveAndFlush(newOuterParamsTargetViewInfo);
             });
         });
 
