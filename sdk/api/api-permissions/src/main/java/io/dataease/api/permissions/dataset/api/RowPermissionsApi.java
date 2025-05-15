@@ -1,12 +1,12 @@
 package io.dataease.api.permissions.dataset.api;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.dataease.api.permissions.dataset.dto.*;
 import io.dataease.api.permissions.user.vo.UserFormVO;
 import io.dataease.auth.DeApiPath;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,7 +23,7 @@ public interface RowPermissionsApi {
 
     @Operation(summary = "查询行权限列表")
     @GetMapping("/pager/{datasetId}/{goPage}/{pageSize}")
-    public IPage<DataSetRowPermissionsTreeDTO> rowPermissions(@PathVariable("datasetId") Long datasetId, @PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize);
+    public Page<DataSetRowPermissionsTreeDTO> rowPermissions(@PathVariable("datasetId") Long datasetId, @PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize);
 
     @Operation(summary = "保存")
     @PostMapping("save")

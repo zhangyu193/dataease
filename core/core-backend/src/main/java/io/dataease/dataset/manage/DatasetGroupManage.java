@@ -33,6 +33,7 @@ import io.dataease.operation.manage.CoreOptRecentManage;
 import io.dataease.system.manage.CoreUserManage;
 import io.dataease.utils.*;
 import jakarta.annotation.Resource;
+import jakarta.persistence.criteria.Predicate;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -211,9 +212,9 @@ public class DatasetGroupManage {
         datasetTableManage.deleteByDatasetGroupDelete(id);
         datasetTableFieldManage.deleteByDatasetGroupDelete(id);
         Specification<CoreDatasetGroup> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.equal(root.get("pid"), id));
-            return predicates;
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("pid"), id));
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
         List<CoreDatasetGroup> coreDatasetGroups = coreDatasetGroupRepository.findAll(spec);
         if (ObjectUtils.isNotEmpty(coreDatasetGroups)) {
@@ -291,23 +292,23 @@ public class DatasetGroupManage {
     public void checkName(DatasetGroupInfoDTO dto) {
         if (!LicenseUtil.licenseValid()) {
             Specification<CoreDatasetGroup> spec = (root, query, cb) -> {
-                var predicates = cb.conjunction();
+                List<Predicate> predicates = new ArrayList<>();
                 if (dto.getPid() != null) {
-                    predicates.getExpressions().add(cb.equal(root.get("pid"), dto.getPid()));
+                    predicates.add(cb.equal(root.get("pid"), dto.getPid()));
                 }
                 if (dto.getName() != null && !dto.getName().isEmpty()) {
-                    predicates.getExpressions().add(cb.equal(root.get("name"), dto.getName()));
+                    predicates.add(cb.equal(root.get("name"), dto.getName()));
                 }
                 if (dto.getId() != null) {
-                    predicates.getExpressions().add(cb.notEqual(root.get("id"), dto.getId()));
+                    predicates.add(cb.notEqual(root.get("id"), dto.getId()));
                 }
                 if (dto.getLevel() != null) {
-                    predicates.getExpressions().add(cb.equal(root.get("level"), dto.getLevel()));
+                    predicates.add(cb.equal(root.get("level"), dto.getLevel()));
                 }
                 if (dto.getNodeType() != null) {
-                    predicates.getExpressions().add(cb.equal(root.get("nodeType"), dto.getNodeType()));
+                    predicates.add(cb.equal(root.get("nodeType"), dto.getNodeType()));
                 }
-                return predicates;
+                return cb.and(predicates.toArray(new Predicate[0]));
             };
             List<CoreDatasetGroup> list = coreDatasetGroupRepository.findAll(spec);
             if (CollectionUtils.isNotEmpty(list)) {

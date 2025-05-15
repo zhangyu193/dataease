@@ -18,6 +18,7 @@ import io.dataease.visualization.dao.auto.mapper.CoreStoreRepository;
 import io.dataease.visualization.dao.ext.mapper.CoreStoreExtMapper;
 import io.dataease.visualization.dao.ext.po.StorePO;
 import jakarta.annotation.Resource;
+import jakarta.persistence.criteria.Predicate;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -40,10 +41,10 @@ public class VisualizationStoreManage {
         Long uid = AuthUtils.getUser().getUserId();
         if (favorited(resourceId)) {
             Specification<CoreStore> spec = (root, query, cb) -> {
-                var predicates = cb.conjunction();
-                predicates.getExpressions().add(cb.equal(root.get("uid"), uid));
-                predicates.getExpressions().add(cb.equal(root.get("resourceId"), resourceId));
-                return predicates;
+                List<Predicate> predicates = new ArrayList<>();
+                predicates.add(cb.equal(root.get("uid"), uid));
+                predicates.add(cb.equal(root.get("resourceId"), resourceId));
+                return cb.and(predicates.toArray(new Predicate[0]));
             };
             coreStoreRepository.delete(spec);
             return;
@@ -67,10 +68,10 @@ public class VisualizationStoreManage {
         queryWrapper.eq("resource_id", resourceId);
         queryWrapper.eq("uid", AuthUtils.getUser().getUserId());
         Specification<CoreStore> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.equal(root.get("uid"), AuthUtils.getUser().getUserId()));
-            predicates.getExpressions().add(cb.equal(root.get("resourceId"), resourceId));
-            return predicates;
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("uid"), AuthUtils.getUser().getUserId()));
+            predicates.add(cb.equal(root.get("resourceId"), resourceId));
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
         return coreStoreRepository.exists(spec);
     }

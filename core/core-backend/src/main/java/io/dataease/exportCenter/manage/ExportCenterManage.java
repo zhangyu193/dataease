@@ -56,6 +56,7 @@ import io.dataease.websocket.WsMessage;
 import io.dataease.websocket.WsService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -221,12 +222,12 @@ public class ExportCenterManage implements BaseExportApi {
             DEException.throwException("无效的状态");
         }
         Specification<CoreExportTask> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.equal(root.get("userId"), AuthUtils.getUser().getUserId()));
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("userId"), AuthUtils.getUser().getUserId()));
             if (!type.equalsIgnoreCase("ALL")) {
-                predicates.getExpressions().add(cb.equal(root.get("exportStatus"), type));
+                predicates.add(cb.equal(root.get("exportStatus"), type));
             }
-            return predicates;
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
 
         List<CoreExportTask> exportTasks = coreExportTaskRepository.findAll(spec);
@@ -280,12 +281,12 @@ public class ExportCenterManage implements BaseExportApi {
         }
         Pageable pageable = PageRequest.of(goPage - 1, pageSize, Sort.by(Sort.Direction.DESC, "exportTime"));
         Specification<CoreExportTask> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.equal(root.get("userId"), AuthUtils.getUser().getUserId()));
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("userId"), AuthUtils.getUser().getUserId()));
             if (!status.equalsIgnoreCase("ALL")) {
-                predicates.getExpressions().add(cb.equal(root.get("exportStatus"), status));
+                predicates.add(cb.equal(root.get("exportStatus"), status));
             }
-            return predicates;
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
         Page<ExportTaskDTO> pager = coreExportTaskRepository.findAll(spec, pageable).map(coreExportToDtoConverter);
         pager.getContent().forEach(exportTask -> {
@@ -304,6 +305,7 @@ public class ExportCenterManage implements BaseExportApi {
         BeanUtils.copyBean(dto, c);
         return dto;
     };
+
 
     public Map<String, Long> exportTasks() {
         Map<String, Long> result = new HashMap<>();

@@ -10,8 +10,8 @@ import io.dataease.chart.dao.auto.mapper.CoreChartViewRepository;
 import io.dataease.chart.dao.ext.entity.ChartBasePO;
 import io.dataease.chart.dao.ext.mapper.ExtChartViewMapper;
 import io.dataease.constant.CommonConstants;
-import io.dataease.dataset.dao.auto.entity.CoreDatasetTableField;
-import io.dataease.dataset.dao.auto.mapper.CoreDatasetTableFieldRepository;
+import io.dataease.dao.auto.entity.CoreDatasetTableField;
+import io.dataease.dao.auto.repo.CoreDatasetTableFieldRepository;
 import io.dataease.dataset.manage.DatasetTableFieldManage;
 import io.dataease.dataset.manage.PermissionManage;
 import io.dataease.dataset.utils.TableUtils;
@@ -38,6 +38,7 @@ import io.dataease.visualization.dao.auto.entity.SnapshotCoreChartView;
 import io.dataease.visualization.dao.auto.mapper.DataVisualizationInfoRepository;
 import io.dataease.visualization.dao.auto.mapper.SnapshotCoreChartViewRepository;
 import jakarta.annotation.Resource;
+import jakarta.persistence.criteria.Predicate;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -231,11 +232,11 @@ public class ChartViewManege {
         TypeReference<List<FieldGroupDTO>> groupTokenType = new TypeReference<>() {
         };
         Specification<CoreDatasetTableField> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.equal(root.get("datasetGroupId"), id));
-            predicates.getExpressions().add(cb.isTrue(root.get("checked")));
-            predicates.getExpressions().add(cb.isNull(root.get("chartId")));
-            return predicates;
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("datasetGroupId"), id));
+            predicates.add(cb.isTrue(root.get("checked")));
+            predicates.add(cb.isNull(root.get("chartId")));
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
         List<CoreDatasetTableField> fields = coreDatasetTableFieldRepository.findAll(spec);
         List<DatasetTableFieldDTO> collect = fields.stream().map(ele -> {

@@ -3,12 +3,9 @@ package io.dataease.datasource.server;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import io.dataease.commons.constants.TaskStatus;
-import io.dataease.dataset.dao.auto.entity.CoreDatasetGroup;
 import io.dataease.datasource.dao.auto.entity.CoreDatasource;
 import io.dataease.datasource.dao.auto.entity.CoreDatasourceTask;
 import io.dataease.datasource.dao.auto.entity.CoreDatasourceTaskLog;
-
-
 import io.dataease.datasource.dao.auto.repository.CoreDatasourceRepository;
 import io.dataease.datasource.dao.auto.repository.CoreDatasourceTaskLogRepository;
 import io.dataease.datasource.dao.auto.repository.CoreDatasourceTaskRepository;
@@ -17,11 +14,7 @@ import io.dataease.datasource.dao.ext.mapper.ExtDatasourceTaskMapper;
 import io.dataease.datasource.manage.DatasourceSyncManage;
 import io.dataease.utils.IDUtils;
 import jakarta.annotation.Resource;
-
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Root;
-import org.hibernate.sql.ast.tree.predicate.Predicate;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.PageRequest;
@@ -62,13 +55,13 @@ public class DatasourceTaskServer {
 
     public CoreDatasourceTaskLog lastSyncLogForTable(Long dsId, String tableName) {
         Specification<CoreDatasourceTaskLog> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.equal(root.get("dsId"), dsId));
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("dsId"), dsId));
             if (tableName != null) {
-                predicates.getExpressions().add(cb.equal(root.get("tableName"), tableName));
+                predicates.add(cb.equal(root.get("tableName"), tableName));
             }
             query.orderBy(cb.desc(root.get("startTime")));
-            return predicates;
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
         List<CoreDatasourceTaskLog> logs = coreDatasourceTaskLogRepository.findAll(spec, PageRequest.of(0, 1)).getContent();
         if (!CollectionUtils.isEmpty(logs)) {

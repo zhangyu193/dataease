@@ -44,9 +44,9 @@ public class SysParameterManage {
 
     public String singleVal(String key) {
         Specification<CoreSysSetting> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.equal(root.get("pkey"), key));
-            return predicates;
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("pkey"), key));
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
         CoreSysSetting sysSetting = coreSysSettingRepository.findOne(spec).orElse(null);
         if (ObjectUtils.isNotEmpty(sysSetting)) {
@@ -103,14 +103,10 @@ public class SysParameterManage {
             } else {
                 prefix = MAP_KEY_PREFIX;
             }
-
-            QueryWrapper<CoreSysSetting> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("pkey", prefix + field);
-
             Specification<CoreSysSetting> spec = (root, query, cb) -> {
-                var predicates = cb.conjunction();
-                predicates.getExpressions().add(cb.equal(root.get("pkey"), prefix + field));
-                return predicates;
+                List<Predicate> predicates = new ArrayList<>();
+                predicates.add(cb.equal(root.get("pkey"), prefix + field));
+                return cb.and(predicates.toArray(new Predicate[0]));
             };
 
             CoreSysSetting sysSetting = coreSysSettingRepository.findOne(spec).orElse(null);
