@@ -6,7 +6,7 @@ import io.dataease.api.visualization.dto.VisualizationViewTableDTO;
 import io.dataease.api.visualization.vo.DataVisualizationBaseVO;
 import io.dataease.api.visualization.vo.DataVisualizationVO;
 import io.dataease.api.visualization.vo.VisualizationReportFilterVO;
-import io.dataease.chart.dao.auto.entity.CoreChartView;
+import io.dataease.dao.auto.entity.CoreChartView;
 import io.dataease.visualization.dao.ext.po.VisualizationResourcePO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

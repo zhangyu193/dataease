@@ -18,7 +18,7 @@ import io.dataease.model.BusiNodeRequest;
 import io.dataease.model.BusiNodeVO;
 import io.dataease.operation.manage.CoreOptRecentManage;
 import io.dataease.utils.*;
-import io.dataease.visualization.dao.auto.entity.DataVisualizationInfo;
+import io.dataease.dao.auto.entity.DataVisualizationInfo;
 import io.dataease.visualization.dao.auto.entity.SnapshotDataVisualizationInfo;
 import io.dataease.visualization.dao.auto.mapper.DataVisualizationInfoRepository;
 import io.dataease.visualization.dao.auto.mapper.SnapshotDataVisualizationInfoRepository;

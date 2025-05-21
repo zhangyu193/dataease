@@ -1,7 +1,7 @@
 package io.dataease.chart.dao.ext.mapper;
 
 import io.dataease.api.chart.vo.ViewSelectorVO;
-import io.dataease.chart.dao.auto.entity.CoreChartView;
+import io.dataease.dao.auto.entity.CoreChartView;
 import io.dataease.chart.dao.ext.entity.ChartBasePO;
 import io.dataease.extensions.view.dto.ChartViewDTO;
 import org.apache.ibatis.annotations.Mapper;

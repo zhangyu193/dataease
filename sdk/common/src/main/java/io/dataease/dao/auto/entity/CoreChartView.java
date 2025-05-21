@@ -1,4 +1,4 @@
-package io.dataease.chart.dao.auto.entity;
+package io.dataease.dao.auto.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;

@@ -154,7 +154,7 @@
         from data_visualization_info dvInfo
         where dvInfo.id = #{sourceDvId}
     </insert>
-    <select id="findViewInfoByCopyId" resultType="io.dataease.chart.dao.auto.entity.CoreChartView">
+    <select id="findViewInfoByCopyId" resultType="io.dataease.dao.auto.entity.CoreChartView">
         select id, copy_from
         from core_chart_view
         where copy_id = #{copyId}

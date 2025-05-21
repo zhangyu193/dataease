@@ -35,7 +35,7 @@
     </select>
 
 
-  <select id="selectListCustom" resultType="io.dataease.chart.dao.auto.entity.CoreChartView">
+  <select id="selectListCustom" resultType="io.dataease.dao.auto.entity.CoreChartView">
         select * from
     <choose>
             <when test="resourceTable == 'snapshot'">

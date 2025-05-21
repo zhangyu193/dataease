@@ -1,7 +1,7 @@
 package io.dataease.chart.manage;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import io.dataease.chart.dao.auto.entity.CoreChartView;
+import io.dataease.dao.auto.entity.CoreChartView;
 import io.dataease.chart.dao.auto.mapper.CoreChartViewRepository;
 import io.dataease.extensions.view.dto.ChartCustomFilterItemDTO;
 import io.dataease.extensions.view.dto.ChartFieldCustomFilterDTO;

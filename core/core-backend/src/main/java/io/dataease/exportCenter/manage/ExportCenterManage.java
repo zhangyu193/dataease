@@ -14,7 +14,7 @@ import io.dataease.api.permissions.dataset.dto.DataSetRowPermissionsTreeDTO;
 import io.dataease.api.xpack.dataFilling.DataFillingApi;
 import io.dataease.api.xpack.dataFilling.dto.DataFillFormTableDataRequest;
 import io.dataease.auth.bo.TokenUserBO;
-import io.dataease.chart.dao.auto.entity.CoreChartView;
+import io.dataease.dao.auto.entity.CoreChartView;
 import io.dataease.chart.dao.auto.mapper.CoreChartViewRepository;
 import io.dataease.chart.server.ChartDataServer;
 import io.dataease.commons.utils.ExcelWatermarkUtils;

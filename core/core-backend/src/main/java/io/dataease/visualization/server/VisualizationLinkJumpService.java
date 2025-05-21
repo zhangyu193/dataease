@@ -10,6 +10,7 @@ import io.dataease.api.visualization.vo.VisualizationOutParamsJumpVO;
 import io.dataease.api.visualization.vo.VisualizationViewTableVO;
 import io.dataease.auth.DeLinkPermit;
 import io.dataease.constant.CommonConstants;
+import io.dataease.dao.auto.entity.DataVisualizationInfo;
 import io.dataease.extensions.datasource.dto.DatasetTableFieldDTO;
 import io.dataease.utils.AuthUtils;
 import io.dataease.utils.BeanUtils;
