@@ -1,6 +1,5 @@
 package io.dataease.map.manage;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import io.dataease.api.map.dto.GeometryNodeCreator;
 import io.dataease.api.map.vo.AreaNode;
 import io.dataease.api.map.vo.CustomGeoArea;
@@ -19,6 +18,7 @@ import io.dataease.map.dao.ext.entity.CoreAreaCustom;
 import io.dataease.map.dao.ext.mapper.CoreAreaCustomRepository;
 import io.dataease.utils.*;
 import jakarta.annotation.Resource;
+import jakarta.persistence.criteria.Predicate;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -194,9 +194,9 @@ public class MapManage {
 
     public List<CustomGeoSubArea> getCustomGeoArea(String areaId) {
         Specification<CoreCustomGeoSubArea> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.equal(root.get("geoAreaId"), areaId));
-            return predicates;
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("geoAreaId"), areaId));
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
         return coreCustomGeoSubAreaRepository.findAll(spec).stream().map(o -> BeanUtils.copyBean(new CustomGeoSubArea(), o)).toList();
     }
@@ -214,12 +214,12 @@ public class MapManage {
         var coreCustomGeoArea = new CoreCustomGeoArea();
         BeanUtils.copyBean(coreCustomGeoArea, geoArea);
         Specification<CoreCustomGeoArea> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.equal(root.get("name"), geoArea.getName()));
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("name"), geoArea.getName()));
             if (geoArea.getId() != null && !geoArea.getId().isEmpty()) {
-                predicates.getExpressions().add(cb.notEqual(root.get("id"), geoArea.getId()));
+                predicates.add(cb.notEqual(root.get("id"), geoArea.getId()));
             }
-            return predicates;
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
 
         List<CoreCustomGeoArea> list = coreCustomGeoAreaRepository.findAll(spec);
@@ -245,13 +245,13 @@ public class MapManage {
         var geoSubArea = new CoreCustomGeoSubArea();
         BeanUtils.copyBean(geoSubArea, customGeoSubArea);
         Specification<CoreCustomGeoSubArea> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.equal(root.get("name"), customGeoSubArea.getName()));
-            predicates.getExpressions().add(cb.equal(root.get("geoAreaId"), customGeoSubArea.getGeoAreaId()));
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("name"), customGeoSubArea.getName()));
+            predicates.add(cb.equal(root.get("geoAreaId"), customGeoSubArea.getGeoAreaId()));
             if (customGeoSubArea.getId() != null) {
-                predicates.getExpressions().add(cb.notEqual(root.get("id"), customGeoSubArea.getId()));
+                predicates.add(cb.notEqual(root.get("id"), customGeoSubArea.getId()));
             }
-            return predicates;
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
         var list = coreCustomGeoSubAreaRepository.findAll(spec);
         if (CollectionUtils.isNotEmpty(list)) {

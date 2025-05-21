@@ -23,9 +23,9 @@ import io.dataease.constant.CommonConstants;
 import io.dataease.constant.LogOT;
 import io.dataease.dataset.dao.auto.entity.CoreDatasetGroup;
 import io.dataease.dataset.dao.auto.entity.CoreDatasetTable;
-import io.dataease.dataset.dao.auto.entity.CoreDatasetTableField;
+import io.dataease.dao.auto.entity.CoreDatasetTableField;
 import io.dataease.dataset.dao.auto.mapper.CoreDatasetGroupRepository;
-import io.dataease.dataset.dao.auto.mapper.CoreDatasetTableFieldRepository;
+import io.dataease.dao.auto.repo.CoreDatasetTableFieldRepository;
 import io.dataease.dataset.dao.auto.mapper.CoreDatasetTableRepository;
 import io.dataease.dataset.manage.DatasetDataManage;
 import io.dataease.dataset.manage.DatasetGroupManage;
@@ -64,11 +64,11 @@ import io.dataease.visualization.manage.CoreBusiManage;
 import io.dataease.visualization.manage.CoreVisualizationManage;
 import io.dataease.visualization.utils.VisualizationUtils;
 import jakarta.annotation.Resource;
+import jakarta.persistence.criteria.Predicate;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
@@ -490,11 +490,11 @@ public class DataVisualizationServer implements DataVisualizationApi {
         Long datasetFolderPid = request.getDatasetFolderPid();
         String datasetFolderName = request.getDatasetFolderName();
         Specification<CoreDatasetGroup> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.equal(root.get("pid"), datasetFolderPid));
-            predicates.getExpressions().add(cb.equal(root.get("name"), datasetFolderName));
-            predicates.getExpressions().add(cb.equal(root.get("nodeType"), DataVisualizationConstants.NODE_TYPE.FOLDER));
-            return predicates;
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("pid"), datasetFolderPid));
+            predicates.add(cb.equal(root.get("name"), datasetFolderName));
+            predicates.add(cb.equal(root.get("nodeType"), DataVisualizationConstants.NODE_TYPE.FOLDER));
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
         if (coreDatasetGroupRepository.exists(spec)) {
             return "repeat";
@@ -515,10 +515,10 @@ public class DataVisualizationServer implements DataVisualizationApi {
         queryWrapper.eq("id", dvId);
 
         Specification<DataVisualizationInfo> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.equal(root.get("id"), dvId));
-            predicates.getExpressions().add(cb.equal(root.get("contentId"), request.getContentId()));
-            return predicates;
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("id"), dvId));
+            predicates.add(cb.equal(root.get("contentId"), request.getContentId()));
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
 
         if (!dataVisualizationInfoRepository.exists(spec)) {
@@ -549,10 +549,10 @@ public class DataVisualizationServer implements DataVisualizationApi {
         // 检查当前节点的pid是否一致如果不一致 需要调用move 接口(预存 可能会出现pid =-1的情况)
         if (request.getPid() != -1) {
             Specification<DataVisualizationInfo> spec = (root, query, cb) -> {
-                var predicates = cb.conjunction();
-                predicates.getExpressions().add(cb.equal(root.get("id"), dvId));
-                predicates.getExpressions().add(cb.equal(root.get("pid"), request.getPid()));
-                return predicates;
+                List<Predicate> predicates = new ArrayList<>();
+                predicates.add(cb.equal(root.get("id"), dvId));
+                predicates.add(cb.equal(root.get("pid"), request.getPid()));
+                return cb.and(predicates.toArray(new Predicate[0]));
             };
             if (!dataVisualizationInfoRepository.exists(spec)) {
                 request.setMoveFromUpdate(true);
@@ -950,22 +950,22 @@ public class DataVisualizationServer implements DataVisualizationApi {
         }
 
         Specification<DataVisualizationInfo> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.isTrue(root.get("deleteFlag")));
-            predicates.getExpressions().add(cb.equal(root.get("pid"), request.getPid()));
-            predicates.getExpressions().add(cb.notEqual(root.get("pid"), "-1"));
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.isTrue(root.get("deleteFlag")));
+            predicates.add(cb.equal(root.get("pid"), request.getPid()));
+            predicates.add(cb.notEqual(root.get("pid"), "-1"));
             if (DataVisualizationConstants.RESOURCE_OPT_TYPE.MOVE.equals(request.getOpt()) || DataVisualizationConstants.RESOURCE_OPT_TYPE.RENAME.equals(request.getOpt()) || DataVisualizationConstants.RESOURCE_OPT_TYPE.EDIT.equals(request.getOpt()) || DataVisualizationConstants.RESOURCE_OPT_TYPE.COPY.equals(request.getOpt())) {
                 if (DataVisualizationConstants.RESOURCE_OPT_TYPE.MOVE.equals(request.getOpt()) || DataVisualizationConstants.RESOURCE_OPT_TYPE.RENAME.equals(request.getOpt()) || DataVisualizationConstants.RESOURCE_OPT_TYPE.EDIT.equals(request.getOpt())) {
-                    predicates.getExpressions().add(cb.notEqual(root.get("id"), String.valueOf(request.getId())));
+                    predicates.add(cb.notEqual(root.get("id"), String.valueOf(request.getId())));
                 }
             }
-            predicates.getExpressions().add(cb.equal(root.get("name"), request.getName().trim()));
-            predicates.getExpressions().add(cb.equal(root.get("nodeType"), request.getNodeType()));
-            predicates.getExpressions().add(cb.equal(root.get("type"), request.getTaskId()));
+            predicates.add(cb.equal(root.get("name"), request.getName().trim()));
+            predicates.add(cb.equal(root.get("nodeType"), request.getNodeType()));
+            predicates.add(cb.equal(root.get("type"), request.getTaskId()));
             if (AuthUtils.getUser().getDefaultOid() != null) {
-                predicates.getExpressions().add(cb.equal(root.get("orgId"), AuthUtils.getUser().getDefaultOid()));
+                predicates.add(cb.equal(root.get("orgId"), AuthUtils.getUser().getDefaultOid()));
             }
-            return predicates;
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
 
 

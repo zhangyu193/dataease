@@ -11,6 +11,7 @@ import io.dataease.utils.IDUtils;
 import io.dataease.visualization.dao.auto.entity.VisualizationSubject;
 import io.dataease.visualization.dao.auto.mapper.VisualizationSubjectRepository;
 import jakarta.annotation.Resource;
+import jakarta.persistence.criteria.Predicate;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -38,9 +39,9 @@ public class VisualizationSubjectService implements VisualizationSubjectApi {
     @Override
     public List<VisualizationSubjectVO> query(VisualizationSubjectRequest request) {
         Specification<VisualizationSubject> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.isTrue(root.get("deleteFlag")));
-            return predicates;
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.isTrue(root.get("deleteFlag")));
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
         List<VisualizationSubject> result = visualizationSubjectRepository.findAll(spec);
         return result.stream().map(subject -> {
@@ -70,9 +71,9 @@ public class VisualizationSubjectService implements VisualizationSubjectApi {
             wrapper.eq("name", request.getName());
 
             Specification<VisualizationSubject> spec = (root, query, cb) -> {
-                var predicates = cb.conjunction();
-                predicates.getExpressions().add(cb.equal(root.get("name"), request.getName()));
-                return predicates;
+                List<Predicate> predicates = new ArrayList<>();
+                predicates.add(cb.equal(root.get("name"), request.getName()));
+                return cb.and(predicates.toArray(new Predicate[0]));
             };
             List<VisualizationSubject> subjectAll = visualizationSubjectRepository.findAll(spec);
             if (CollectionUtils.isEmpty(subjectAll)) {
@@ -88,10 +89,10 @@ public class VisualizationSubjectService implements VisualizationSubjectApi {
             }
         } else {
             Specification<VisualizationSubject> spec = (root, query, cb) -> {
-                var predicates = cb.conjunction();
-                predicates.getExpressions().add(cb.equal(root.get("name"), request.getName()));
-                predicates.getExpressions().add(cb.equal(root.get("id"), request.getId()));
-                return predicates;
+                List<Predicate> predicates = new ArrayList<>();
+                predicates.add(cb.equal(root.get("name"), request.getName()));
+                predicates.add(cb.equal(root.get("id"), request.getId()));
+                return cb.and(predicates.toArray(new Predicate[0]));
             };
 
             List<VisualizationSubject> subjectAll = visualizationSubjectRepository.findAll(spec);

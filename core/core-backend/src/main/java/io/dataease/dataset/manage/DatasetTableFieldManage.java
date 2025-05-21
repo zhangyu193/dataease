@@ -1,10 +1,9 @@
 package io.dataease.dataset.manage;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dataease.api.dataset.union.DatasetGroupInfoDTO;
-import io.dataease.dataset.dao.auto.entity.CoreDatasetTableField;
-import io.dataease.dataset.dao.auto.mapper.CoreDatasetTableFieldRepository;
+import io.dataease.dao.auto.entity.CoreDatasetTableField;
+import io.dataease.dao.auto.repo.CoreDatasetTableFieldRepository;
 import io.dataease.dataset.utils.DatasetUtils;
 import io.dataease.dataset.utils.TableUtils;
 import io.dataease.engine.constant.ExtFieldConstant;
@@ -24,9 +23,9 @@ import io.dataease.utils.BeanUtils;
 import io.dataease.utils.IDUtils;
 import io.dataease.utils.JsonUtil;
 import jakarta.annotation.Resource;
+import jakarta.persistence.criteria.Predicate;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.sql.ast.tree.predicate.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
@@ -67,13 +66,13 @@ public class DatasetTableFieldManage {
         checkNameLength(datasetTableFieldDTO.getName());
         CoreDatasetTableField coreDatasetTableField = coreDatasetTableFieldRepository.findById(datasetTableFieldDTO.getId()).orElse(null);
         Specification<CoreDatasetTableField> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.equal(root.get("name"), datasetTableFieldDTO.getName()));
-            predicates.getExpressions().add(cb.equal(root.get("chartId"), datasetTableFieldDTO.getChartId()));
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("name"), datasetTableFieldDTO.getName()));
+            predicates.add(cb.equal(root.get("chartId"), datasetTableFieldDTO.getChartId()));
             if (coreDatasetTableField != null && coreDatasetTableField.getId() != null) {
-                predicates.getExpressions().add(cb.notEqual(root.get("id"), datasetTableFieldDTO.getId()));
+                predicates.add(cb.notEqual(root.get("id"), datasetTableFieldDTO.getId()));
             }
-            return predicates;
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
         List<CoreDatasetTableField> fields = coreDatasetTableFieldRepository.findAll(spec);
         if (ObjectUtils.isNotEmpty(fields)) {
@@ -153,11 +152,11 @@ public class DatasetTableFieldManage {
 
     public List<DatasetTableFieldDTO> selectByDatasetGroupId(Long id) {
         Specification<CoreDatasetTableField> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.equal(root.get("datasetGroupId"), id));
-            predicates.getExpressions().add(cb.isTrue(root.get("checked")));
-            predicates.getExpressions().add(cb.isNull(root.get("chartId")));
-            return predicates;
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("datasetGroupId"), id));
+            predicates.add(cb.isTrue(root.get("checked")));
+            predicates.add(cb.isNull(root.get("chartId")));
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
         return transDTO(coreDatasetTableFieldRepository.findAll(spec));
     }
@@ -166,12 +165,12 @@ public class DatasetTableFieldManage {
         Map<String, List<DatasetTableFieldDTO>> map = new HashMap<>();
         for (Long id : ids) {
             Specification<CoreDatasetTableField> spec = (root, query, cb) -> {
-                var predicates = cb.conjunction();
-                predicates.getExpressions().add(cb.equal(root.get("datasetGroupId"), id));
-                predicates.getExpressions().add(cb.isTrue(root.get("checked")));
-                predicates.getExpressions().add(cb.isNull(root.get("chartId")));
-                predicates.getExpressions().add(cb.equal(root.get("extField"), 0));
-                return predicates;
+                List<Predicate> predicates = new ArrayList<>();
+                predicates.add(cb.equal(root.get("datasetGroupId"), id));
+                predicates.add(cb.isTrue(root.get("checked")));
+                predicates.add(cb.isNull(root.get("chartId")));
+                predicates.add(cb.equal(root.get("extField"), 0));
+                return cb.and(predicates.toArray(new Predicate[0]));
             };
             map.put(String.valueOf(id), transDTO(coreDatasetTableFieldRepository.findAll(spec)));
         }
@@ -195,10 +194,10 @@ public class DatasetTableFieldManage {
      */
     public Map<String, List<DatasetTableFieldDTO>> listByDQ(Long id) {
         Specification<CoreDatasetTableField> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.equal(root.get("datasetGroupId"), id));
-            predicates.getExpressions().add(cb.isTrue(root.get("checked")));
-            return predicates;
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("datasetGroupId"), id));
+            predicates.add(cb.isTrue(root.get("checked")));
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
         List<DatasetTableFieldDTO> list = transDTO(coreDatasetTableFieldRepository.findAll(spec));
         List<DatasetTableFieldDTO> dimensionList = list.stream().filter(ele -> StringUtils.equalsIgnoreCase(ele.getGroupType(), "d")).collect(Collectors.toList());
@@ -221,11 +220,11 @@ public class DatasetTableFieldManage {
             DEException.throwException(Translator.get("i18n_copilot_ds"));
         }
         Specification<CoreDatasetTableField> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.equal(root.get("datasetGroupId"), id));
-            predicates.getExpressions().add(cb.isTrue(root.get("checked")));
-            predicates.getExpressions().add(cb.equal(root.get("extField"), 0));
-            return predicates;
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("datasetGroupId"), id));
+            predicates.add(cb.isTrue(root.get("checked")));
+            predicates.add(cb.equal(root.get("extField"), 0));
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
 
         List<DatasetTableFieldDTO> list = transDTO(coreDatasetTableFieldRepository.findAll(spec));

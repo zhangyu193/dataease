@@ -14,6 +14,7 @@ import io.dataease.model.BusiNodeVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -118,7 +119,7 @@ public interface DataFillingApi {
 
     @Operation(summary = "查询数据填报任务列表")
     @PostMapping("/form/{formId}/task/page/{goPage}/{pageSize}")
-    IPage<ReportGridVO> taskPager(@PathVariable("formId") Long formId, @PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody DfTaskInfoRequest request);
+    Page<ReportGridVO> taskPager(@PathVariable("formId") Long formId, @PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody DfTaskInfoRequest request);
 
     @Operation(summary = "查询数据填报子任务列表")
     @PostMapping("/sub-task/page/{goPage}/{pageSize}")

@@ -21,12 +21,14 @@ import io.dataease.utils.BeanUtils;
 import io.dataease.utils.CommonBeanFactory;
 import io.dataease.utils.IDUtils;
 import jakarta.annotation.Resource;
+import jakarta.persistence.criteria.Predicate;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -177,9 +179,9 @@ public class ShareTicketManage {
 
     public long ticketCount(String uuid) {
         Specification<CoreShareTicket> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
-            predicates.getExpressions().add(cb.equal(root.get("uuid"), uuid));
-            return predicates;
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("uuid"), uuid));
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
         return coreShareTicketRepository.count(spec);
     }

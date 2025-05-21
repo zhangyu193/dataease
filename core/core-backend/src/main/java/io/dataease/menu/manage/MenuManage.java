@@ -10,6 +10,7 @@ import io.dataease.menu.dao.auto.entity.CoreMenu;
 import io.dataease.menu.dao.auto.mapper.CoreMenuRepository;
 import io.dataease.utils.BeanUtils;
 import jakarta.annotation.Resource;
+import jakarta.persistence.criteria.Predicate;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.jpa.domain.Specification;
@@ -42,9 +43,9 @@ public class MenuManage {
 
     public List<CoreMenu> coreMenus() {
         Specification<CoreMenu> spec = (root, query, cb) -> {
-            var predicates = cb.conjunction();
+            List<Predicate> predicates = new ArrayList<>();
             query.orderBy(cb.asc(root.get("menuSort")));
-            return predicates;
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
         return coreMenuRepository.findAll(spec);
     }

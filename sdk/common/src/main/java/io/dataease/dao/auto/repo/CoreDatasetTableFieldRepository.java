@@ -1,6 +1,6 @@
-package io.dataease.dataset.dao.auto.mapper;
+package io.dataease.dao.auto.repo;
 
-import io.dataease.dataset.dao.auto.entity.CoreDatasetTableField;
+import io.dataease.dao.auto.entity.CoreDatasetTableField;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;

@@ -1,8 +1,8 @@
 package io.dataease.chart.manage;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import io.dataease.dataset.dao.auto.entity.CoreDatasetTableField;
-import io.dataease.dataset.dao.auto.mapper.CoreDatasetTableFieldRepository;
+import io.dataease.dao.auto.entity.CoreDatasetTableField;
+import io.dataease.dao.auto.repo.CoreDatasetTableFieldRepository;
 import io.dataease.engine.utils.SQLUtils;
 import io.dataease.extensions.datasource.dto.CalParam;
 import io.dataease.extensions.datasource.dto.DatasetTableFieldDTO;

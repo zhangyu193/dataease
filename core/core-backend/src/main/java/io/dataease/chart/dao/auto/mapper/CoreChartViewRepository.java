@@ -1,5 +1,6 @@
 package io.dataease.chart.dao.auto.mapper;
 
+
 import io.dataease.chart.dao.auto.entity.CoreChartView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
