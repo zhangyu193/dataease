@@ -5,13 +5,12 @@ import io.dataease.api.visualization.request.DataVisualizationBaseRequest;
 import io.dataease.license.utils.LogUtil;
 import io.dataease.template.dao.auto.entity.DeTemplateVersion;
 import io.dataease.template.dao.auto.mapper.DeTemplateVersionMapper;
+import io.dataease.utils.IDUtils;
 import io.dataease.utils.JsonUtil;
 import io.dataease.visualization.server.StaticResourceServer;
 import jakarta.annotation.Resource;
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.data.repository.init.ResourceReader;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -48,6 +47,7 @@ public class TemplateLocalParseManage {
                     DeTemplateVersion version = new DeTemplateVersion();
                     version.setScript(templateName);
                     version.setInstalledOn(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES));
+                    version.setInstalledRank(IDUtils.snowID());
                     try {
                         String content = new String(templateFile.getInputStream().readAllBytes());;
                         DataVisualizationBaseRequest template = JsonUtil.parseObject(content, DataVisualizationBaseRequest.class);

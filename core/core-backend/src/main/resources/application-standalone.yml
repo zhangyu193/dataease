@@ -1,12 +1,12 @@
 spring:
   datasource:
-    url: jdbc:mysql://39.101.192.183:33221/dataease?autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&characterSetResults=UTF-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://39.101.192.183:33221/dataeasev3?autoReconnect=false&useUnicode=true&characterEncoding=UTF-8&characterSetResults=UTF-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: Password123@mysql
   messages:
     basename: i18n/lic,i18n/core,i18n/permissions,i18n/xpack,i18n/sync
   flyway:
-    enabled: true
+    enabled: false
     table: de_standalone_version
     validate-on-migrate: false
     locations: classpath:db/migration
@@ -17,6 +17,8 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
     hibernate:
+      naming:
+        physical-strategy: io.dataease.config.DynamicCaseNamingStrategy
       ddl-auto: update
     show-sql: true
 mybatis-plus:

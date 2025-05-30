@@ -32,10 +32,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -216,6 +213,7 @@ public class EngineManage {
             version.setScript("Demo");
             version.setInstalledOn(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES));
             version.setSuccess(true);
+            version.setInstalledRank(IDUtils.snowID());
             deTemplateVersionMapper.insert(version);
         }
 

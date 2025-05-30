@@ -19,8 +19,8 @@ import java.time.Instant;
 import java.util.*;
 
 
-//@Component
-//@Order(value = 1)
+@Component
+@Order(value = 1)
 public class InitSqlListener implements ApplicationRunner {
     @Autowired
     private DeStandaloneVersionRepository deStandaloneVersionRepository;

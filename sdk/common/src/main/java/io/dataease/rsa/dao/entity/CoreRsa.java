@@ -5,11 +5,16 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
+
 @Getter
 @Setter
 @Entity
 @Table(name = "core_rsa")
-public class CoreRsa {
+public class CoreRsa implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+    
     @Id
     @Column(name = "id", nullable = false)
     private Integer id;
