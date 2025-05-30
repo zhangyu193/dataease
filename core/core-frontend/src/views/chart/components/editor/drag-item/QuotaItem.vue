@@ -80,7 +80,7 @@ const emit = defineEmits([
 
 const { item, chart } = toRefs(props)
 const toolTip = computed(() => {
-  return props.themes === 'dark' ? 'light' : 'dark'
+  return props.themes || 'dark'
 })
 watch(
   [() => props.quotaData, () => props.item, () => props.chart.type],
@@ -999,6 +999,14 @@ span {
     background-color: rgba(31, 35, 41, 0.1);
   }
   &.dark-dimension-quota {
+    background-color: #292929;
+    border: 1px solid #434343;
+    :deep(.ed-dropdown-menu__item--divided) {
+      border-color: #ebebeb26;
+    }
+    :deep(.ed-dropdown-menu__item:not(.is-disabled):hover) {
+      background-color: #ebebeb1a;
+    }
     .inner-dropdown-menu {
       color: rgba(235, 235, 235, 1);
     }

@@ -164,7 +164,7 @@ onMounted(() => {
             ></Icon>
           </el-icon>
         </span>
-        <el-tooltip :effect="themes === 'dark' ? 'light' : 'dark'" placement="top">
+        <el-tooltip :effect="themes || 'dark'" placement="top">
           <template #content>
             <table>
               <tbody>
@@ -449,9 +449,18 @@ span {
     background-color: rgba(31, 35, 41, 0.1);
   }
   &.dark-dimension-quota {
+    background-color: #292929;
+    border: 1px solid #434343;
+    :deep(.ed-dropdown-menu__item--divided) {
+      border-color: #ebebeb26;
+    }
     .inner-dropdown-menu {
       color: rgba(235, 235, 235, 1);
     }
+    :deep(.ed-dropdown-menu__item:not(.is-disabled):hover) {
+      background-color: #ebebeb1a;
+    }
+
     :deep(.ed-dropdown-menu__item) {
       color: rgba(235, 235, 235, 1);
     }
@@ -530,6 +539,7 @@ span {
   }
 }
 .dark-dimension-quota {
+  background-color: #292929;
   span {
     color: #ebebeb;
   }

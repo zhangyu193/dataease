@@ -67,7 +67,7 @@ const emit = defineEmits([
 
 const { item } = toRefs(props)
 const toolTip = computed(() => {
-  return props.themes === 'dark' ? 'light' : 'dark'
+  return props.themes || 'dark'
 })
 const showValueFormatter = computed<boolean>(() => {
   return (
@@ -845,8 +845,16 @@ span {
     background-color: rgba(31, 35, 41, 0.1);
   }
   &.dark-dimension-quota {
+    background-color: #292929;
+    border: 1px solid #434343;
+    :deep(.ed-dropdown-menu__item--divided) {
+      border-color: #ebebeb26;
+    }
     .inner-dropdown-menu {
       color: rgba(235, 235, 235, 1);
+    }
+    :deep(.ed-dropdown-menu__item:not(.is-disabled):hover) {
+      background-color: #ebebeb1a;
     }
     :deep(.ed-dropdown-menu__item) {
       color: rgba(235, 235, 235, 1);
