@@ -1,0 +1,25 @@
+package io.dataease.qrtz.dao.auto.repo.entity;
+
+import jakarta.persistence.*;
+import lombok.Data;
+
+import java.sql.Blob;
+
+@Data
+@Entity
+@Table(name = "QRTZ_CALENDARS")
+@IdClass(QrtzCalendarsId.class)
+public class QrtzCalendars {
+
+    @Id
+    @Column(name = "SCHED_NAME", length = 120, nullable = false)
+    private String schedName;
+
+    @Id
+    @Column(name = "CALENDAR_NAME", length = 200, nullable = false)
+    private String calendarName;
+
+    @Lob
+    @Column(name = "CALENDAR", nullable = false)
+    private Blob calendar;
+}

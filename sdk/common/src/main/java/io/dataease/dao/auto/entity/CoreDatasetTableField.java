@@ -103,7 +103,7 @@ public class CoreDatasetTableField {
     private String dateFormatType;
 
     @Lob
-    @Column(name = "params", length = 16777216)
+    @Column(name = "params" )
     private String params;
 
 }

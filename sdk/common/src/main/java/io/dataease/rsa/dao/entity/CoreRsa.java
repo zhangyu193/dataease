@@ -14,7 +14,7 @@ import java.io.Serializable;
 public class CoreRsa implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    
+
     @Id
     @Column(name = "id", nullable = false)
     private Integer id;

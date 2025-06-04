@@ -153,6 +153,7 @@ public class EngineManage {
         }
         engine.setName("默认引擎");
         engine.setDescription("默认引擎");
+        engine.setId(IDUtils.snowID());
         coreDeEngineRepository.saveAndFlush(engine);
     }
 
