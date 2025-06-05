@@ -14,7 +14,7 @@ import org.hibernate.annotations.Comment;
 @Comment("外部参数关联关系表")
 @Entity
 @Table(name = "visualization_outer_params")
-public class VisualizationOuterParam {
+public class VisualizationOuterParams {
     @Id
     @Size(max = 50)
     @Comment("主键")
