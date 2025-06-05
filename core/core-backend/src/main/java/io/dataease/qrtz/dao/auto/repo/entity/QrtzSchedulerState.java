@@ -4,12 +4,14 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Comment;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "QRTZ_SCHEDULER_STATE")
 @IdClass(QrtzSchedulerStateId.class)
+@Comment("存储所有节点的scheduler（开源作业调度框架Quartz）")
 public class QrtzSchedulerState {
     @Id
     @Column(name = "SCHED_NAME", length = 120, nullable = false)

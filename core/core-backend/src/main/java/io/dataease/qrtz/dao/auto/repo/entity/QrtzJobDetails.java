@@ -2,6 +2,7 @@ package io.dataease.qrtz.dao.auto.repo.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.Comment;
 
 import java.sql.Blob;
 
@@ -9,6 +10,7 @@ import java.sql.Blob;
 @Entity
 @Table(name = "QRTZ_JOB_DETAILS")
 @IdClass(QrtzJobDetailsId.class)
+@Comment("存储jobDetails信息（开源作业调度框架Quartz）")
 public class QrtzJobDetails {
 
     @Id

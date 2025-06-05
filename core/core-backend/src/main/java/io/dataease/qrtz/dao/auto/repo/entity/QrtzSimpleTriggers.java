@@ -2,6 +2,7 @@ package io.dataease.qrtz.dao.auto.repo.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.Comment;
 
 import java.io.Serializable;
 
@@ -9,6 +10,7 @@ import java.io.Serializable;
 @Entity
 @Table(name = "QRTZ_SIMPLE_TRIGGERS")
 @IdClass(QrtzSimpleTriggersId.class)
+@Comment("SimpleTrigger存储（开源作业调度框架Quartz）")
 public class QrtzSimpleTriggers implements Serializable {
 
     @Id

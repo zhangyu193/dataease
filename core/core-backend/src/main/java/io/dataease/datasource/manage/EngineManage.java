@@ -13,11 +13,12 @@ import io.dataease.extensions.datasource.dto.DatasourceRequest;
 import io.dataease.extensions.datasource.factory.ProviderFactory;
 import io.dataease.result.ResultMessage;
 import io.dataease.template.dao.auto.entity.DeTemplateVersion;
-import io.dataease.template.dao.auto.mapper.DeTemplateVersionMapper;
+import io.dataease.template.dao.auto.mapper.DeTemplateVersionRepository;
 import io.dataease.utils.BeanUtils;
 import io.dataease.utils.IDUtils;
 import io.dataease.utils.JsonUtil;
 import io.dataease.utils.ModelUtils;
+import io.dataease.visualization.dao.auto.entity.VisualizationSubject;
 import jakarta.annotation.Resource;
 import jakarta.persistence.criteria.Predicate;
 import org.apache.commons.lang3.StringUtils;
@@ -50,7 +51,7 @@ public class EngineManage {
     private String engineUrl;
 
     @Resource
-    private DeTemplateVersionMapper deTemplateVersionMapper;
+    private DeTemplateVersionRepository deTemplateVersionRepository;
 
 
     public CoreDeEngine info() throws DEException {
@@ -180,7 +181,14 @@ public class EngineManage {
         // 版本检查
         QueryWrapper<DeTemplateVersion> queryVersionWrapper = new QueryWrapper<>();
         queryVersionWrapper.eq("version", "985188400292302848");
-        if (!coreDatasourceRepository.exists(example) && !deTemplateVersionMapper.exists(queryVersionWrapper) && !ModelUtils.isDesktop()) {
+
+        Specification<DeTemplateVersion> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("version"), "985188400292302848"));
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        if (!coreDatasourceRepository.exists(example) && !deTemplateVersionRepository.exists(spec) && !ModelUtils.isDesktop()) {
             Pattern WITH_SQL_FRAGMENT = Pattern.compile("jdbc:mysql://(.*):(\\d+)/(.*)\\?(.*)");
             Matcher matcher = WITH_SQL_FRAGMENT.matcher(env.getProperty("spring.datasource.url"));
             if (!matcher.find()) {
@@ -215,7 +223,7 @@ public class EngineManage {
             version.setInstalledOn(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES));
             version.setSuccess(true);
             version.setInstalledRank(IDUtils.snowID());
-            deTemplateVersionMapper.insert(version);
+            deTemplateVersionRepository.saveAndFlush(version);
         }
 
     }

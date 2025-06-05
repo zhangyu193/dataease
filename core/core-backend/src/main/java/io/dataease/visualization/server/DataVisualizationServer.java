@@ -48,8 +48,8 @@ import io.dataease.operation.manage.CoreOptRecentManage;
 import io.dataease.system.manage.CoreUserManage;
 import io.dataease.template.dao.auto.entity.VisualizationTemplate;
 import io.dataease.template.dao.auto.entity.VisualizationTemplateExtendData;
-import io.dataease.template.dao.auto.mapper.VisualizationTemplateExtendDataMapper;
-import io.dataease.template.dao.auto.mapper.VisualizationTemplateMapper;
+import io.dataease.template.dao.auto.mapper.VisualizationTemplateExtendDataRepository;
+import io.dataease.template.dao.auto.mapper.VisualizationTemplateRepository;
 import io.dataease.template.dao.ext.ExtVisualizationTemplateMapper;
 import io.dataease.template.manage.TemplateCenterManage;
 import io.dataease.utils.*;
@@ -102,7 +102,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
     private ChartDataManage chartDataManage;
 
     @Resource
-    private VisualizationTemplateMapper templateMapper;
+    private VisualizationTemplateRepository visualizationTemplateRepository;
 
     @Resource
     private TemplateCenterManage templateCenterManage;
@@ -111,7 +111,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
     private StaticResourceServer staticResourceServer;
 
     @Resource
-    private VisualizationTemplateExtendDataMapper templateExtendDataMapper;
+    private VisualizationTemplateExtendDataRepository templateExtendDataRepository;
 
     @Resource
     private CoreOptRecentManage coreOptRecentManage;
@@ -778,7 +778,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
             Integer version = null;
             //内部模板新建
             if (DataVisualizationConstants.NEW_PANEL_FROM.NEW_INNER_TEMPLATE.equals(newFrom)) {
-                VisualizationTemplate visualizationTemplate = templateMapper.selectById(request.getTemplateId());
+                VisualizationTemplate visualizationTemplate = visualizationTemplateRepository.findById(request.getTemplateId()).orElse(null);
                 templateStyle = visualizationTemplate.getTemplateStyle();
                 templateData = visualizationTemplate.getTemplateData();
                 dynamicData = visualizationTemplate.getDynamicData();
@@ -791,7 +791,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 VisualizationTemplate visualizationTemplateUpdate = new VisualizationTemplate();
                 visualizationTemplateUpdate.setId(visualizationTemplate.getId());
                 visualizationTemplateUpdate.setUseCount(visualizationTemplate.getUseCount() == null ? 0 : visualizationTemplate.getUseCount() + 1);
-                templateMapper.updateById(visualizationTemplateUpdate);
+                visualizationTemplateRepository.saveAndFlush(visualizationTemplateUpdate);
             } else if (DataVisualizationConstants.NEW_PANEL_FROM.NEW_OUTER_TEMPLATE.equals(newFrom)) {
                 templateStyle = request.getCanvasStyleData();
                 templateData = request.getComponentData();
@@ -868,7 +868,7 @@ public class DataVisualizationServer implements DataVisualizationApi {
                 canvasViewInfo.put(chartView.getId(), chartView);
                 //插入模板数据 此处预先插入减少数据交互量
                 VisualizationTemplateExtendData extendData = new VisualizationTemplateExtendData();
-                templateExtendDataMapper.insert(BeanUtils.copyBean(extendData, extendDataDTO));
+                templateExtendDataRepository.saveAndFlush(BeanUtils.copyBean(extendData, extendDataDTO));
             }
             request.setComponentData(templateData);
             request.setCanvasStyleData(templateStyle);

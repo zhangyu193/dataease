@@ -3,11 +3,13 @@ package io.dataease.qrtz.dao.auto.repo.entity;
 import jakarta.persistence.Entity;
 import lombok.Data;
 import jakarta.persistence.*;
+import org.hibernate.annotations.Comment;
 
 @Data
 @Entity
 @Table(name = "QRTZ_CRON_TRIGGERS")
 @IdClass(QrtzCronTriggersId.class)
+@Comment("CronTrigger存储（开源作业调度框架Quartz）")
 public class QrtzCronTriggers {
 
     @Id

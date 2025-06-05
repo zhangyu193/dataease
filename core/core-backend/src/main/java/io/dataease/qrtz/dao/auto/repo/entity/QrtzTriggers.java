@@ -1,12 +1,14 @@
 package io.dataease.qrtz.dao.auto.repo.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.Comment;
 
 import java.sql.Blob;
 
 @Entity
 @Table(name = "QRTZ_TRIGGERS")
 @IdClass(QrtzTriggersId.class)
+@Comment("存储定义的trigger（开源作业调度框架Quartz）")
 public class QrtzTriggers {
 
     @Id

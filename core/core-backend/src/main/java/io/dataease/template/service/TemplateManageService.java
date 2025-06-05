@@ -11,15 +11,17 @@ import io.dataease.exception.DEException;
 import io.dataease.template.dao.auto.entity.VisualizationTemplate;
 import io.dataease.template.dao.auto.entity.VisualizationTemplateCategory;
 import io.dataease.template.dao.auto.entity.VisualizationTemplateCategoryMap;
-import io.dataease.template.dao.auto.mapper.VisualizationTemplateCategoryMapMapper;
-import io.dataease.template.dao.auto.mapper.VisualizationTemplateCategoryMapper;
-import io.dataease.template.dao.auto.mapper.VisualizationTemplateMapper;
+import io.dataease.template.dao.auto.mapper.VisualizationTemplateCategoryMapRepository;
+import io.dataease.template.dao.auto.mapper.VisualizationTemplateCategoryRepository;
+import io.dataease.template.dao.auto.mapper.VisualizationTemplateRepository;
 import io.dataease.template.dao.ext.ExtVisualizationTemplateMapper;
 import io.dataease.utils.AuthUtils;
 import io.dataease.utils.BeanUtils;
 import io.dataease.visualization.server.StaticResourceServer;
 import jakarta.annotation.Resource;
+import jakarta.persistence.criteria.Predicate;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -39,12 +41,12 @@ import static io.dataease.constant.StaticResourceConstants.UPLOAD_URL_PREFIX;
 public class TemplateManageService implements TemplateManageApi {
 
     @Resource
-    private VisualizationTemplateMapper templateMapper;
+    private VisualizationTemplateRepository visualizationTemplateRepository;
 
     @Resource
-    private VisualizationTemplateCategoryMapper templateCategoryMapper;
+    private VisualizationTemplateCategoryRepository visualizationTemplateCategoryRepository;
     @Resource
-    private VisualizationTemplateCategoryMapMapper categoryMapMapper;
+    private VisualizationTemplateCategoryMapRepository visualizationTemplateCategoryMapRepository;
     @Resource
     private ExtVisualizationTemplateMapper extTemplateMapper;
     @Resource
@@ -96,28 +98,26 @@ public class TemplateManageService implements TemplateManageApi {
                 }
                 VisualizationTemplateCategory templateCategory = new VisualizationTemplateCategory();
                 BeanUtils.copyBean(templateCategory, request);
-                templateCategoryMapper.insert(templateCategory);
+                visualizationTemplateCategoryRepository.saveAndFlush(templateCategory);
             } else {//模板插入 同名的模板进行覆盖(先删除)
                 // 分类映射删除
                 extTemplateMapper.deleteCategoryMapByTemplate(request.getName(), null);
                 // 模板删除
-                QueryWrapper<VisualizationTemplate> wrapper = new QueryWrapper<>();
-                wrapper.eq("name", request.getName());
-                templateMapper.delete(wrapper);
+                visualizationTemplateRepository.deleteByTemplateName(request.getName());
 
                 VisualizationTemplate template = new VisualizationTemplate();
                 BeanUtils.copyBean(template, request);
                 if (template.getVersion() == null) {
                     template.setVersion(2);
                 }
-                templateMapper.insert(template);
+                visualizationTemplateRepository.saveAndFlush(template);
                 // 插入分类关系
                 request.getCategories().forEach(categoryId -> {
                     VisualizationTemplateCategoryMap categoryMap = new VisualizationTemplateCategoryMap();
                     categoryMap.setId(UUID.randomUUID().toString());
                     categoryMap.setCategoryId(categoryId);
                     categoryMap.setTemplateId(template.getId());
-                    categoryMapMapper.insert(categoryMap);
+                    visualizationTemplateCategoryMapRepository.saveAndFlush(categoryMap);
                 });
 
             }
@@ -129,7 +129,7 @@ public class TemplateManageService implements TemplateManageApi {
                 }
                 VisualizationTemplateCategory templateCategory = new VisualizationTemplateCategory();
                 BeanUtils.copyBean(templateCategory, request);
-                templateCategoryMapper.updateById(templateCategory);
+                visualizationTemplateCategoryRepository.saveAndFlush(templateCategory);
             } else {
                 String nameCheckResult = this.nameCheck(CommonConstants.OPT_TYPE.UPDATE, request.getName(), request.getId());
                 if (CommonConstants.CHECK_RESULT.EXIST_ALL.equals(nameCheckResult)) {
@@ -140,7 +140,7 @@ public class TemplateManageService implements TemplateManageApi {
                 if (template.getVersion() == null) {
                     template.setVersion(2);
                 }
-                templateMapper.updateById(template);
+                visualizationTemplateRepository.saveAndFlush(template);
                 //更新分类
                 // 分类映射删除
                 extTemplateMapper.deleteCategoryMapByTemplate(null, request.getId());
@@ -150,7 +150,7 @@ public class TemplateManageService implements TemplateManageApi {
                     categoryMap.setId(UUID.randomUUID().toString());
                     categoryMap.setCategoryId(categoryId);
                     categoryMap.setTemplateId(request.getId());
-                    categoryMapMapper.insert(categoryMap);
+                    visualizationTemplateCategoryMapRepository.saveAndFlush(categoryMap);
                 });
             }
 
@@ -163,14 +163,17 @@ public class TemplateManageService implements TemplateManageApi {
 
     //模板名称检查
     public String nameCheck(String optType, String name, String id) {
-        QueryWrapper<VisualizationTemplate> wrapper = new QueryWrapper<>();
-        if (CommonConstants.OPT_TYPE.INSERT.equals(optType)) {
-            wrapper.eq("name", name);
-        } else if (CommonConstants.OPT_TYPE.UPDATE.equals(optType)) {
-            wrapper.eq("name", name);
-            wrapper.ne("id", id);
-        }
-        List<VisualizationTemplate> templateList = templateMapper.selectList(wrapper);
+        Specification<VisualizationTemplate> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (CommonConstants.OPT_TYPE.INSERT.equals(optType)) {
+                predicates.add(cb.equal(root.get("name"), name));
+            } else if (CommonConstants.OPT_TYPE.UPDATE.equals(optType)) {
+                predicates.add(cb.equal(root.get("name"), name));
+                predicates.add(cb.notEqual(root.get("id"), id));
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        List<VisualizationTemplate> templateList = visualizationTemplateRepository.findAll(spec);
         if (CollectionUtils.isEmpty(templateList)) {
             return CommonConstants.CHECK_RESULT.NONE;
         } else {
@@ -201,14 +204,19 @@ public class TemplateManageService implements TemplateManageApi {
 
     //分类名称检查
     public String categoryNameCheck(String optType, String name, String id) {
-        QueryWrapper<VisualizationTemplateCategory> wrapper = new QueryWrapper<>();
-        if (CommonConstants.OPT_TYPE.INSERT.equals(optType)) {
-            wrapper.eq("name", name);
-        } else if (CommonConstants.OPT_TYPE.UPDATE.equals(optType)) {
-            wrapper.eq("name", name);
-            wrapper.ne("id", id);
-        }
-        List<VisualizationTemplateCategory> templateList = templateCategoryMapper.selectList(wrapper);
+        Specification<VisualizationTemplateCategory> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (CommonConstants.OPT_TYPE.INSERT.equals(optType)) {
+                predicates.add(cb.equal(root.get("name"), name));
+            } else if (CommonConstants.OPT_TYPE.UPDATE.equals(optType)) {
+                predicates.add(cb.equal(root.get("name"), name));
+                predicates.add(cb.notEqual(root.get("id"), id));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        List<VisualizationTemplateCategory> templateList = visualizationTemplateCategoryRepository.findAll(spec);
         if (CollectionUtils.isEmpty(templateList)) {
             return CommonConstants.CHECK_RESULT.NONE;
         } else {
@@ -225,14 +233,11 @@ public class TemplateManageService implements TemplateManageApi {
     public void delete(String id, String categoryId) {
         Assert.notNull(id, "id cannot be null");
         Assert.notNull(categoryId, "categoryId cannot be null");
-        QueryWrapper<VisualizationTemplateCategoryMap> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("template_id", id);
-        queryWrapper.eq("category_id", categoryId);
-        categoryMapMapper.delete(queryWrapper);
+        visualizationTemplateCategoryMapRepository.deleteByTemplateIdAndCategoryId(id, categoryId);
         // 如何是最后一个 则实际模板需要删除
         Long result = extTemplateMapper.checkRepeatTemplateId(categoryId, id);
         if (result == 0) {
-            templateMapper.deleteById(id);
+            visualizationTemplateRepository.deleteById(id);
         }
     }
 
@@ -243,10 +248,8 @@ public class TemplateManageService implements TemplateManageApi {
 
         Long checkResult = extTemplateMapper.checkCategoryMap(id);
         if (checkResult == 0) {
-            templateCategoryMapper.deleteById(id);
-            QueryWrapper<VisualizationTemplateCategoryMap> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("category_id", id);
-            categoryMapMapper.delete(queryWrapper);
+            visualizationTemplateCategoryRepository.deleteById(id);
+            visualizationTemplateCategoryMapRepository.deleteByCategoryId(id);
             return "success";
         } else {
             return "repeat";
@@ -255,7 +258,7 @@ public class TemplateManageService implements TemplateManageApi {
 
     @Override
     public VisualizationTemplateVO findOne(String templateId) {
-        VisualizationTemplate template = templateMapper.selectById(templateId);
+        VisualizationTemplate template = visualizationTemplateRepository.findById(templateId).orElse(null);
         if (template != null) {
             VisualizationTemplateVO templateVO = new VisualizationTemplateVO();
             BeanUtils.copyBean(templateVO, template);
@@ -300,7 +303,7 @@ public class TemplateManageService implements TemplateManageApi {
                 categoryMap.setId(UUID.randomUUID().toString());
                 categoryMap.setCategoryId(categoryId);
                 categoryMap.setTemplateId(templateId);
-                categoryMapMapper.insert(categoryMap);
+                visualizationTemplateCategoryMapRepository.saveAndFlush(categoryMap);
             });
         });
     }
@@ -309,14 +312,11 @@ public class TemplateManageService implements TemplateManageApi {
     public void batchDelete(TemplateManageBatchRequest request) {
         request.getTemplateIds().forEach(templateId -> {
             request.getCategories().forEach(categoryId -> {
-                QueryWrapper<VisualizationTemplateCategoryMap> queryWrapper = new QueryWrapper<>();
-                queryWrapper.eq("template_id", templateId);
-                queryWrapper.eq("category_id", categoryId);
-                categoryMapMapper.delete(queryWrapper);
+                visualizationTemplateCategoryMapRepository.deleteByTemplateIdAndCategoryId(templateId, categoryId);
                 // 如何是最后一个 则实际模板需要删除
                 Long result = extTemplateMapper.checkRepeatTemplateId(categoryId, templateId);
                 if (result == 0) {
-                    templateMapper.deleteById(templateId);
+                    visualizationTemplateRepository.deleteById(templateId);
                 }
             });
 

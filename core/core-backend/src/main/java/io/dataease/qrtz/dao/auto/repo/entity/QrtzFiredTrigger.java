@@ -5,12 +5,14 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Comment;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "QRTZ_FIRED_TRIGGERS")
 @IdClass(QrtzFiredTriggerId.class)
+@Comment("存储已经触发的trigger相关信息（开源作业调度框架Quartz）")
 public class QrtzFiredTrigger {
 
     @Id

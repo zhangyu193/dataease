@@ -7,15 +7,13 @@ import io.dataease.api.template.dto.TemplateMarketPreviewInfoDTO;
 import io.dataease.api.template.response.*;
 import io.dataease.api.template.vo.MarketApplicationMetaDataVO;
 import io.dataease.api.template.vo.MarketApplicationSpecVO;
-import io.dataease.api.template.vo.MarketLatestReleaseVO;
 import io.dataease.api.template.vo.MarketMetaDataVO;
 import io.dataease.constant.CommonConstants;
 import io.dataease.exception.DEException;
 import io.dataease.i18n.Translator;
 import io.dataease.operation.manage.CoreOptRecentManage;
 import io.dataease.system.manage.SysParameterManage;
-import io.dataease.template.dao.auto.entity.VisualizationTemplateCategoryMap;
-import io.dataease.template.dao.auto.mapper.VisualizationTemplateCategoryMapMapper;
+import io.dataease.template.dao.auto.mapper.VisualizationTemplateCategoryMapRepository;
 import io.dataease.template.dao.ext.ExtVisualizationTemplateMapper;
 import io.dataease.utils.HttpClientConfig;
 import io.dataease.utils.HttpClientUtil;
@@ -49,9 +47,6 @@ public class TemplateCenterManage {
     @Resource
     private ExtVisualizationTemplateMapper templateManageMapper;
 
-    @Resource
-    private VisualizationTemplateCategoryMapMapper categoryMapMapper;
-
     /**
      * @param templateUrl template url
      * @Description Get template file from template market
@@ -68,10 +63,7 @@ public class TemplateCenterManage {
         }
     }
 
-    /**
-     * @param templateUrl template url
-     * @Description Get template file from template market
-     */
+
     public TemplateManageFileDTO getTemplateFromMarketV2(String templateName) {
         if (StringUtils.isNotEmpty(templateName)) {
             String sufUrl = sysParameterManage.groupVal("template.").get("template.url");

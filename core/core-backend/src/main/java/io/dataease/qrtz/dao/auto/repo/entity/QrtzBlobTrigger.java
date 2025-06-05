@@ -3,6 +3,7 @@ package io.dataease.qrtz.dao.auto.repo.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Comment;
 
 import java.sql.Blob;
 
@@ -11,6 +12,7 @@ import java.sql.Blob;
 @Entity
 @Table(name = "QRTZ_BLOB_TRIGGERS")
 @IdClass(QrtzBlobTriggerId.class)
+@Comment("自定义触发器存储（开源作业调度框架Quartz）")
 public class QrtzBlobTrigger {
 
     @MapsId

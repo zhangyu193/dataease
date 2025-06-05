@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Comment;
 
 import java.math.BigDecimal;
 
@@ -12,6 +13,7 @@ import java.math.BigDecimal;
 @Entity
 @Table(name = "QRTZ_SIMPROP_TRIGGERS")
 @IdClass(QrtzSimpropTriggerId.class)
+@Comment("存储CalendarIntervalTrigger和DailyTimeIntervalTrigger两种类型的触发器（开源作业调度框架Quartz）")
 public class QrtzSimpropTrigger {
     @Id
     @Column(name = "SCHED_NAME", length = 120, nullable = false)
