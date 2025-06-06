@@ -19,4 +19,9 @@ public interface VisualizationTemplateRepository extends JpaRepository<Visualiza
     @Transactional
     @Query(value = "DELETE FROM VisualizationTemplate WHERE name = :name")
     int deleteByTemplateName(String name);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE VisualizationTemplate vt SET vt.version = 2")
+    void updateVersion();
 }

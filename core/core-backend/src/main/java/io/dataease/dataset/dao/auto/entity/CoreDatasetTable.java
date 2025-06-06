@@ -52,4 +52,18 @@ public class CoreDatasetTable {
     @Column(name = "sql_variable_details", length = 16777216)
     private String sqlVariableDetails;
 
+    public CoreDatasetTable() {
+
+    }
+
+    public CoreDatasetTable(Long id, String name, String tableName, Long datasourceId, Long datasetGroupId, String type, String info, String sqlVariableDetails) {
+        this.id = id;
+        this.name = name;
+        this.tableName = tableName;
+        this.datasourceId = datasourceId;
+        this.datasetGroupId = datasetGroupId;
+        this.type = type;
+        this.info = info;
+        this.sqlVariableDetails = sqlVariableDetails;
+    }
 }

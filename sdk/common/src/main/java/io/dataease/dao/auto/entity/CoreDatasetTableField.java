@@ -131,4 +131,37 @@ public class CoreDatasetTableField {
     @Column(name = "params")
     private String params;
 
+    public CoreDatasetTableField() {
+    }
+
+    public CoreDatasetTableField(Long id, Long datasourceId, Long datasetTableId, Long datasetGroupId,
+                                 Long chartId, String originName, String name, String description,
+                                 String dataeaseName, String fieldShortName, String groupType,
+                                 String type, Integer size, Integer deType, Integer deExtractType,
+                                 Integer extField, Boolean checked, Integer columnIndex,
+                                 Long lastSyncTime, Integer accuracy, String dateFormat,
+                                 String dateFormatType) {
+        this.id = id;
+        this.datasourceId = datasourceId;
+        this.datasetTableId = datasetTableId;
+        this.datasetGroupId = datasetGroupId;
+        this.chartId = chartId;
+        this.originName = originName;
+        this.name = name;
+        this.description = description;
+        this.dataeaseName = dataeaseName;
+        this.fieldShortName = fieldShortName;
+        this.groupType = groupType;
+        this.type = type;
+        this.size = size;
+        this.deType = deType;
+        this.deExtractType = deExtractType;
+        this.extField = extField;
+        this.checked = checked;
+        this.columnIndex = columnIndex;
+        this.lastSyncTime = lastSyncTime;
+        this.accuracy = accuracy;
+        this.dateFormat = dateFormat;
+        this.dateFormatType = dateFormatType;
+    }
 }

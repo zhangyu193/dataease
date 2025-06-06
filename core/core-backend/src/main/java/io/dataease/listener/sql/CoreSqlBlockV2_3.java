@@ -8,7 +8,9 @@ import io.dataease.template.dao.auto.mapper.VisualizationTemplateRepository;
 import io.dataease.visualization.dao.auto.entity.VisualizationWatermark;
 import io.dataease.visualization.dao.auto.mapper.VisualizationWatermarkRepository;
 import jakarta.annotation.Resource;
+import org.springframework.stereotype.Component;
 
+@Component
 public class CoreSqlBlockV2_3 implements CoreSqlBlock {
 
     @Resource

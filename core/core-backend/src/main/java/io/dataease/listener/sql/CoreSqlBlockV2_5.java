@@ -6,7 +6,9 @@ import io.dataease.system.dao.auto.entity.CoreSysSetting;
 import io.dataease.system.dao.auto.mapper.CoreSysSettingRepository;
 import io.dataease.visualization.dao.auto.mapper.DataVisualizationInfoRepository;
 import jakarta.annotation.Resource;
+import org.springframework.stereotype.Component;
 
+@Component
 public class CoreSqlBlockV2_5 implements CoreSqlBlock {
 
     @Resource

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -20,5 +21,14 @@ public interface CoreChartViewRepository extends JpaRepository<CoreChartView, Lo
     @Transactional
     @Query("DELETE FROM CoreChartView c WHERE c.sceneId = :sceneId AND c.id NOT IN :chartIds")
     void deleteBySceneIdAndNotInIds(Long sceneId, List<Long> chartIds);
+
+    @Query("SELECT c FROM CoreChartView c WHERE c.type = 'table-pivot'")
+    List<CoreChartView> findAllTablePivotViews();
+
+    @Modifying
+    @Query("UPDATE CoreChartView c SET c.xAxis = :newXAxis, c.xAxisExt = :newXAxisExt WHERE c.id = :id")
+    void updateAxes(@Param("id") Long id,
+                    @Param("newXAxis") String newXAxis,
+                    @Param("newXAxisExt") String newXAxisExt);
 
 }

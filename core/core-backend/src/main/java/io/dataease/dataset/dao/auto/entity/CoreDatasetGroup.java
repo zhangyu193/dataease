@@ -92,4 +92,28 @@ public class CoreDatasetGroup {
     @Column(name = "is_cross")
     private Boolean isCross;
 
+    public CoreDatasetGroup() {
+    }
+
+    // 全参构造函数
+    public CoreDatasetGroup(Long id, String name, Long pid, Integer level, String node_type, String type,
+                            Integer mode, String info, String create_by, Long create_time, String qrtz_instance,
+                            String sync_status, String update_by, Long last_update_time, String union_sql) {
+        this.id = id;
+        this.name = name;
+        this.pid = pid;
+        this.level = level;
+        this.nodeType = node_type;
+        this.type = type;
+        this.mode = mode;
+        this.info = info;
+        this.createBy = create_by;
+        this.createTime = create_time;
+        this.qrtzInstance = qrtz_instance;
+        this.syncStatus = sync_status;
+        this.updateBy = update_by;
+        this.lastUpdateTime = last_update_time;
+        this.unionSql = union_sql;
+    }
+
 }

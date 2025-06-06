@@ -15,4 +15,10 @@ public interface DataVisualizationInfoRepository extends JpaRepository<DataVisua
     @Query("UPDATE DataVisualizationInfo dv SET dv.mobileLayout = 0")
     void updateMobileLayout();
 
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE DataVisualizationInfo dv SET dv.version = 2")
+    void updateVersion();
+
 }

@@ -6,10 +6,12 @@ import io.dataease.menu.dao.auto.mapper.CoreMenuRepository;
 import io.dataease.system.dao.auto.entity.CoreSysSetting;
 import io.dataease.system.dao.auto.mapper.CoreSysSettingRepository;
 import jakarta.annotation.Resource;
+import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.List;
 
+@Component
 public class CoreSqlBlockV2_1 implements CoreSqlBlock {
 
     @Resource
