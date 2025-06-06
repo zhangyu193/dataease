@@ -34,7 +34,7 @@ public class CoreSqlBlockV2_0 implements CoreSqlBlock {
         return new Version("2.0");
     }
 
-    public void execute() {
+    private void saveCoreMenu() {
         List<CoreMenu> menus = Arrays.asList(
                 createMenu(1L, 0L, 2, "workbranch", "workbranch", 1, null, "/workbranch", false, true, true),
                 createMenu(2L, 0L, 2, "panel", "visualized/view/panel", 2, null, "/panel", false, true, true),
@@ -48,7 +48,9 @@ public class CoreSqlBlockV2_0 implements CoreSqlBlock {
                 createMenu(16L, 15L, 2, "parameter", "system/parameter", 1, "sys-parameter", "/parameter", false, true, false)
         );
         coreMenuRepository.saveAllAndFlush(menus);
+    }
 
+    List<Area> buildAreas1() {
         List<Area> areas = Arrays.asList(
                 createArea("156", "country", "中国", "000"),
                 createArea("156110000", "province", "北京市", "156"),
@@ -339,8 +341,12 @@ public class CoreSqlBlockV2_0 implements CoreSqlBlock {
                 createArea("156150500", "city", "通辽市", "156150000"),
                 createArea("156440100", "city", "广州市", "156440000"),
                 createArea("156652900", "city", "阿克苏地区", "156650000"),
-                createArea("156460100", "city", "海口市", "156460000"),
-                createArea("156451200", "city", "河池市", "156450000"),
+                createArea("156460100", "city", "海口市", "156460000"));
+        return areas;
+    }
+
+    List<Area> buildAreas2() {
+        List<Area> areas = Arrays.asList(createArea("156451200", "city", "河池市", "156450000"),
                 createArea("156530400", "city", "玉溪市", "156530000"),
                 createArea("156810100", "city", "香港特别行政区", "156810000"),
                 createArea("156341000", "city", "黄山市", "156340000"),
@@ -1363,7 +1369,16 @@ public class CoreSqlBlockV2_0 implements CoreSqlBlock {
                 createArea("156140423", "district", "襄垣县", "156140400"),
                 createArea("156360222", "district", "浮梁县", "156360200"),
                 createArea("156130104", "district", "桥西区", "156130100"),
-                createArea("156130532", "district", "平乡县", "156130500"),
+                createArea("156130532", "district", "平乡县", "156130500"));
+        return areas;
+    }
+
+    public void execute() {
+        saveCoreMenu();
+        List<Area> areaList = new ArrayList<>();
+        areaList.addAll(buildAreas1());
+        areaList.addAll(buildAreas2());
+        List<Area> areas = Arrays.asList(
                 createArea("156130672", "district", "保定白沟新城", "156130600"),
                 createArea("156360823", "district", "峡江县", "156360800"),
                 createArea("156540629", "district", "尼玛县", "156540600"),
@@ -3466,7 +3481,8 @@ public class CoreSqlBlockV2_0 implements CoreSqlBlock {
                 createArea("156460202", "district", "海棠区", "156460200")
         );
 
-        areaRepository.saveAllAndFlush(areas);
+        areaList.addAll(areas);
+        areaRepository.saveAllAndFlush(areaList);
 
         List<VisualizationBackground> visualizationBackgrounds = new ArrayList<>();
         visualizationBackgrounds.add(createVisualizationBackground("board_1", "边框1", "default", "", null, null, null, "img/board", "board/board_1.svg"));
