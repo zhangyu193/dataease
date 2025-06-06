@@ -5,9 +5,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Comment;
 
 @Getter
 @Setter
+@Comment("导出任务表")
 @Entity
 @Table(name = "core_export_task")
 public class CoreExportTask {

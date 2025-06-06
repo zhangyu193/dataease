@@ -7,6 +7,7 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Comment;
 
 @Getter
 @Setter
@@ -14,6 +15,7 @@ import lombok.Setter;
 @Table(name = "core_copilot_config")
 public class CoreCopilotConfig {
     @Id
+    @Comment("ID")
     @Column(name = "id", nullable = false)
     private Long id;
 

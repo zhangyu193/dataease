@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 
-public interface VisualizationBackgroundRepository extends JpaRepository<VisualizationBackground, Long>, JpaSpecificationExecutor<VisualizationBackground> {
+public interface VisualizationBackgroundRepository extends JpaRepository<VisualizationBackground, String>, JpaSpecificationExecutor<VisualizationBackground> {
 
 
 
