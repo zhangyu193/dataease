@@ -1,6 +1,6 @@
 package io.dataease.api.sync.datasource.api;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
+import io.dataease.api.sync.commons.PageResult;
 import io.dataease.api.sync.datasource.dto.DBTableDTO;
 import io.dataease.api.sync.datasource.dto.DatasourceGridRequest;
 import io.dataease.api.sync.datasource.dto.GetDatasourceRequest;
@@ -26,10 +26,10 @@ import static io.dataease.constant.AuthResourceEnum.SYNC_DATASOURCE;
 public interface SyncDatasourceApi {
 
     @PostMapping("/source/pager/{goPage}/{pageSize}")
-    IPage<SyncDatasourceVO> sourcePager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody DatasourceGridRequest request);
+    PageResult<SyncDatasourceVO> sourcePager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody DatasourceGridRequest request);
 
     @PostMapping("/target/pager/{goPage}/{pageSize}")
-    IPage<SyncDatasourceVO> targetPager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody DatasourceGridRequest request);
+    PageResult<SyncDatasourceVO> targetPager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody DatasourceGridRequest request);
 
     @PostMapping("/save")
     void save(@RequestBody SyncDatasourceDTO dataSourceDTO) throws DEException;
