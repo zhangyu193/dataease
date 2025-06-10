@@ -21,4 +21,9 @@ public interface DataVisualizationInfoRepository extends JpaRepository<DataVisua
     @Query("UPDATE DataVisualizationInfo dv SET dv.version = 2")
     void updateVersion();
 
+    @Modifying
+    @Transactional
+    @Query("UPDATE DataVisualizationInfo dv SET dv.checkVersion = :checkVersion")
+    void updateCheckVersion(String checkVersion);
+
 }

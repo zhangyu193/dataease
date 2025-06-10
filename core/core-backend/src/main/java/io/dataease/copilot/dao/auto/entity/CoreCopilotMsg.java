@@ -34,27 +34,22 @@ public class CoreCopilotMsg {
     @Column(name = "engine_type")
     private String engineType;
 
-    @Comment("create sql")
     @Lob
     @Column(name = "schema_sql", length = 16777216)
     private String schemaSql;
 
-    @Comment("用户提问")
     @Lob
     @Column(name = "question", length = 16777216)
     private String question;
 
-    @Comment("历史信息")
     @Lob
     @Column(name = "history", length = 16777216)
     private String history;
 
-    @Comment("copilot 返回 sql")
     @Lob
     @Column(name = "copilot_sql", length = 16777216)
     private String copilotSql;
 
-    @Comment("copilot 返回信息")
     @Lob
     @Column(name = "api_msg", length = 16777216)
     private String apiMsg;
@@ -67,17 +62,14 @@ public class CoreCopilotMsg {
     @Column(name = "chart_ok")
     private Integer chartOk;
 
-    @Comment("chart 内容")
     @Lob
     @Column(name = "chart", length = 16777216)
     private String chart;
 
-    @Comment("视图数据")
     @Lob
     @Column(name = "chart_data", length = 16777216)
     private String chartData;
 
-    @Comment("执行请求的SQL")
     @Lob
     @Column(name = "exec_sql", length = 16777216)
     private String execSql;
@@ -86,7 +78,6 @@ public class CoreCopilotMsg {
     @Column(name = "msg_status")
     private Integer msgStatus;
 
-    @Comment("创建时间")
     @Lob
     @Column(name = "err_msg", length = 16777216)
     private String errMsg;

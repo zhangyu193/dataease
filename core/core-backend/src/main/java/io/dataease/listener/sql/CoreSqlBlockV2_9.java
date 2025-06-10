@@ -29,7 +29,7 @@ public class CoreSqlBlockV2_9 implements CoreSqlBlock {
 
     @Override
     public Version getVersion() {
-        return new Version("2.8");
+        return new Version("2.9");
     }
 
     @Override

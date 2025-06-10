@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 
-public interface AreaRepository extends JpaRepository<Area, Long>, JpaSpecificationExecutor<Area> {
+public interface AreaRepository extends JpaRepository<Area, String>, JpaSpecificationExecutor<Area> {
 
     @Query("SELECT p FROM Area p WHERE p.pid = :pid")
     List<Area> findByPid156(@Param("pid") String pid);
@@ -20,5 +20,20 @@ public interface AreaRepository extends JpaRepository<Area, Long>, JpaSpecificat
     @Modifying
     @Transactional
     @Query("UPDATE Area a SET a.id = :newId, a.name = :newName WHERE a.id = :oldId")
-    int updateArea(Long oldId, Long newId, String newName);
+    int updateArea(String oldId, String newId, String newName);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM Area a WHERE a.pid = :areaId OR a.id = :areaId")
+    void deleteByPidOrId(String areaId);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE Area a SET  a.name = :newName WHERE a.id = :id")
+    int updatateNameById(String id, String newName);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE Area a SET  a.pid = :newPid WHERE a.pid = :oldPid")
+    int updatatePid(String newPid,String oldPid);
 }

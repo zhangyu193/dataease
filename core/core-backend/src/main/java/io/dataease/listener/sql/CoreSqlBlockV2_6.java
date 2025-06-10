@@ -47,8 +47,8 @@ public class CoreSqlBlockV2_6 implements CoreSqlBlock {
 
         dataVisualizationInfoRepository.updateVersion();
         visualizationTemplateRepository.updateVersion();
-        areaRepository.updateArea(156330103L, 156330113L, "临平区");
-        areaRepository.updateArea(156330104L, 156330114L, "钱塘区");
+        areaRepository.updateArea("156330103", "156330113", "临平区");
+        areaRepository.updateArea("156330104", "156330114", "钱塘区");
 
         List<CoreChartView> pivotViews = coreChartViewRepository.findAllTablePivotViews();
         for (CoreChartView view : pivotViews) {

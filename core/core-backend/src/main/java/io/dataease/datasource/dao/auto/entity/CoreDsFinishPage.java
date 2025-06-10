@@ -8,6 +8,7 @@ import org.hibernate.annotations.Comment;
 @Getter
 @Setter
 @Entity
+@Comment("是否显示完成页面记录表")
 @Table(name = "core_ds_finish_page")
 public class CoreDsFinishPage {
     @Id

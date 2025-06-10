@@ -31,7 +31,7 @@ public class VisualizationBackground {
     private String classification;
 
     @Lob
-    @Column(name = "content")
+    @Column(name = "content", length = 16777216)
     private String content;
 
     @Size(max = 255)
@@ -58,4 +58,14 @@ public class VisualizationBackground {
     private String url;
 
 
+    public VisualizationBackground() {
+    }
+
+    public VisualizationBackground(String id, String name, String classification, String baseUrl, String url) {
+        this.id = id;
+        this.name = name;
+        this.classification = classification;
+        this.baseUrl = baseUrl;
+        this.url = url;
+    }
 }

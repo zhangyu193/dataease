@@ -11,7 +11,11 @@ import org.hibernate.annotations.Comment;
 @Setter
 @Comment("数据源定时同步任务执行日志")
 @Entity
-@Table(name = "core_datasource_task_log")
+@Table(name = "core_datasource_task_log", indexes = {
+        @Index(name = "idx_dataset_table_task_log_A", columnList = "ds_id, table_name, start_time"),
+        @Index(name = "idx_dataset_table_task_log_ds_id", columnList = "ds_id"),
+        @Index(name = "idx_dataset_table_task_log_task_id", columnList = "task_id")
+})
 public class CoreDatasourceTaskLog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
