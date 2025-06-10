@@ -1,10 +1,10 @@
 package io.dataease.api.sync.task.api;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.dataease.api.sync.task.dto.TaskLogGridRequest;
 import io.dataease.api.sync.task.vo.LogResultVO;
 import io.dataease.api.sync.task.vo.TaskLogVO;
 import io.dataease.auth.DeApiPath;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +21,7 @@ import static io.dataease.constant.AuthResourceEnum.TASK;
 @DeApiPath(value = "/sync/task/log", rt = TASK)
 public interface TaskLogApi {
     @PostMapping("/pager/{goPage}/{pageSize}")
-    IPage<TaskLogVO> pager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody TaskLogGridRequest request);
+    Page<TaskLogVO> pager(@PathVariable("goPage") int goPage, @PathVariable("pageSize") int pageSize, @RequestBody TaskLogGridRequest request);
 
     @GetMapping("/detail/{logId}/{fromLineNum}")
     LogResultVO logDetail(@PathVariable("logId") String logId, @PathVariable("fromLineNum") int fromLineNum);

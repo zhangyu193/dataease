@@ -1,7 +1,6 @@
 package io.dataease.exportCenter.manage;
 
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dataease.api.chart.dto.ViewDetailField;
 import io.dataease.api.chart.request.ChartExcelRequest;
@@ -821,7 +820,6 @@ public class ExportCenterManage implements BaseExportApi {
         if (StringUtils.isBlank(val)) {
             DEException.throwException("未获取到文件保留时间");
         }
-        QueryWrapper<CoreExportTask> queryWrapper = new QueryWrapper<>();
         long expTime = Long.parseLong(val) * 24L * 3600L * 1000L;
         long threshold = System.currentTimeMillis() - expTime;
         coreExportTaskRepository.deleteByExportTimeLessThan(threshold);

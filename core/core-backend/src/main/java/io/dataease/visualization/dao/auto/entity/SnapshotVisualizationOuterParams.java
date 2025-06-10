@@ -13,7 +13,7 @@ import org.hibernate.annotations.Comment;
 @Setter
 @Entity
 @Table(name = "snapshot_visualization_outer_params")
-public class SnapshotVisualizationOuterParam {
+public class SnapshotVisualizationOuterParams {
     @Id
     @Size(max = 50)
     @Comment("主键")

@@ -127,7 +127,6 @@ public class ChartViewManege {
 
     @Transactional
     public void deleteBySceneId(Long sceneId, List<Long> chartIds) {
-        QueryWrapper<CoreChartView> wrapper = new QueryWrapper<>();
         coreChartViewRepository.deleteBySceneIdAndNotInIds(sceneId, chartIds);
     }
 
@@ -325,8 +324,6 @@ public class ChartViewManege {
     }
 
     public void deleteFieldByChartId(Long chartId) {
-        QueryWrapper<CoreDatasetTableField> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("chart_id", chartId);
         coreDatasetTableFieldRepository.deleteByChartId(chartId);
     }
 
